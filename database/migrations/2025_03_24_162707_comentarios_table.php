@@ -11,7 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
+        Schema::create('comentarios', function (Blueprint $table) {
+            $table->id();
+            $table->text('comentario');
+            $table->integer('puntuacion');
+            $table->date('fecha');
+            
+            $table->foreignId('libro_id');
+            $table->foreignId('cliente_id');
+
+            $table->timestamps();
+        });
+            
     }
 
     /**
@@ -19,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('comentarios');
     }
 };

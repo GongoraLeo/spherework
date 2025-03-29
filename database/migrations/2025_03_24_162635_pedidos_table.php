@@ -11,7 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
+        Schema::create('pedidos', function (Blueprint $table) {
+            $table->id();
+            $table->date('fecha');
+            $table->enum('estado', ['pendiente', 'enviado', 'entregado']);
+
+            $table->foreignId('cliente_id');
+
+            $table->timestamps();
+        });
     }
 
     /**
@@ -19,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('pedidos');
     }
 };
