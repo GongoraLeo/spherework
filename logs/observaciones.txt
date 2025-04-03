@@ -1,0 +1,5 @@
+
+//Cosas a tener en cuenta
+
+En libros (migracion, controlador) habría que añadir stock para luego que funcione con el carrito
+En Empleados están los roles de administrador y gestor, no sé si se pueden dejar sin roles a los empleados básicos o si hayu que añadir un nuevo roles
