@@ -12,7 +12,8 @@ class EmpleadosController extends Controller
      */
     public function index()
     {
-        //
+        $empleados = Empleados::all();
+        return view('empleados.index', compact('empleados'));
     }
 
     /**
@@ -20,7 +21,7 @@ class EmpleadosController extends Controller
      */
     public function create()
     {
-        //
+        return view('empleados.create');
     }
 
     /**
@@ -28,7 +29,15 @@ class EmpleadosController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|max:255',
+            'email' => 'required|email|max:255',
+            'password' => 'required|min:8',
+            'rol' => 'required|in:administrador,gestor'
+        ]);
+        Empleados::create($request->all());
+        return redirect()->route('empleados.index')
+            ->with('success', 'Empleado creado correctamente.');
     }
 
     /**
@@ -36,7 +45,8 @@ class EmpleadosController extends Controller
      */
     public function show(Empleados $empleados)
     {
-        //
+        $empleados = Empleados::find($empleados->id);
+        return view('empleados.show', compact('empleados'));
     }
 
     /**
@@ -44,7 +54,8 @@ class EmpleadosController extends Controller
      */
     public function edit(Empleados $empleados)
     {
-        //
+        $empleados = Empleados::find($empleados->id);
+        return view('empleados.edit', compact('empleados'));
     }
 
     /**
@@ -52,7 +63,15 @@ class EmpleadosController extends Controller
      */
     public function update(Request $request, Empleados $empleados)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|max:255',
+            'email' => 'required|email|max:255',
+            'password' => 'required|min:8',
+            'rol' => 'required|in:administrador,gestor'
+        ]);
+        $empleados->update($request->all());
+        return redirect()->route('empleados.index')
+            ->with('success', 'Empleado actualizado correctamente.');
     }
 
     /**
@@ -60,6 +79,9 @@ class EmpleadosController extends Controller
      */
     public function destroy(Empleados $empleados)
     {
-        //
+        $empleados = Empleados::find($empleados->id);
+        $empleados->delete();
+        return redirect()->route('empleados.index')
+            ->with('success', 'Empleado eliminado correctamente.');
     }
 }

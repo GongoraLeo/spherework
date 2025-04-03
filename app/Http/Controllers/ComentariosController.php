@@ -12,7 +12,8 @@ class ComentariosController extends Controller
      */
     public function index()
     {
-        //
+        $comentarios = Comentarios::all();
+        return view('comentarios.index', compact('comentarios'));
     }
 
     /**
@@ -20,7 +21,7 @@ class ComentariosController extends Controller
      */
     public function create()
     {
-        //
+        return view('comentarios.create');
     }
 
     /**
@@ -28,7 +29,16 @@ class ComentariosController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'comentario' => 'required|max:255',
+            'cliente_id' => 'required|exists:clientes,id',
+            'puntuacion' => 'required|integer|min:1|max:5',
+            'libro_id' => 'required|exists:libros,id',
+            'fecha' => 'required|date'
+        ]);
+        Comentarios::create($request->all());
+        return redirect()->route('comentarios.index')
+            ->with('success', 'Comentario creado correctamente.');
     }
 
     /**
@@ -36,7 +46,8 @@ class ComentariosController extends Controller
      */
     public function show(Comentarios $comentarios)
     {
-        //
+        $comentarios = Comentarios::find($comentarios->id);
+        return view('comentarios.show', compact('comentarios'));
     }
 
     /**
@@ -44,7 +55,8 @@ class ComentariosController extends Controller
      */
     public function edit(Comentarios $comentarios)
     {
-        //
+        $comentarios = Comentarios::find($comentarios->id);
+        return view('comentarios.edit', compact('comentarios'));
     }
 
     /**
@@ -52,7 +64,16 @@ class ComentariosController extends Controller
      */
     public function update(Request $request, Comentarios $comentarios)
     {
-        //
+        $request->validate([
+            'comentario' => 'required|max:255',
+            'cliente_id' => 'required|exists:clientes,id',
+            'puntuacion' => 'required|integer|min:1|max:5',
+            'libro_id' => 'required|exists:libros,id',
+            'fecha' => 'required|date'
+        ]);
+        $comentarios->update($request->all());
+        return redirect()->route('comentarios.index')
+            ->with('success', 'Comentario actualizado correctamente.');
     }
 
     /**
@@ -60,6 +81,9 @@ class ComentariosController extends Controller
      */
     public function destroy(Comentarios $comentarios)
     {
-        //
+        $comentarios = Comentarios::find($comentarios->id);
+        $comentarios->delete();
+        return redirect()->route('comentarios.index')
+            ->with('success', 'Comentario eliminado correctamente.');
     }
 }

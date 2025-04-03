@@ -12,7 +12,8 @@ class PedidosController extends Controller
      */
     public function index()
     {
-        //
+        $pedidos = Pedidos::all();
+        return view('pedidos.index', compact('pedidos'));
     }
 
     /**
@@ -20,7 +21,7 @@ class PedidosController extends Controller
      */
     public function create()
     {
-        //
+        return view('pedidos.create');
     }
 
     /**
@@ -28,7 +29,15 @@ class PedidosController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'cliente_id' => 'required|exists:clientes,id',
+            'fecha' => 'required|date',
+            'estado' => 'required|string|max:255'
+        ]);
+
+        Pedidos::create($request->all());
+        return redirect()->route('pedidos.index')
+            ->with('success', 'Pedido creado correctamente.');
     }
 
     /**
@@ -36,7 +45,8 @@ class PedidosController extends Controller
      */
     public function show(Pedidos $pedidos)
     {
-        //
+        $pedidos = Pedidos::find($pedidos->id);
+        return view('pedidos.show', compact('pedidos'));
     }
 
     /**
@@ -44,7 +54,8 @@ class PedidosController extends Controller
      */
     public function edit(Pedidos $pedidos)
     {
-        //
+        $pedidos = Pedidos::find($pedidos->id);
+        return view('pedidos.edit', compact('pedidos'));
     }
 
     /**
@@ -52,7 +63,15 @@ class PedidosController extends Controller
      */
     public function update(Request $request, Pedidos $pedidos)
     {
-        //
+        $request->validate([
+            'cliente_id' => 'required|exists:clientes,id',
+            'fecha' => 'required|date',
+            'estado' => 'required|string|max:255'
+        ]);
+
+        $pedidos->update($request->all());
+        return redirect()->route('pedidos.index')
+            ->with('success', 'Pedido actualizado correctamente.');
     }
 
     /**
@@ -60,6 +79,9 @@ class PedidosController extends Controller
      */
     public function destroy(Pedidos $pedidos)
     {
-        //
+        $pedidos = Pedidos::find($pedidos->id);
+        $pedidos->delete();
+        return redirect()->route('pedidos.index')
+            ->with('success', 'Pedido eliminado correctamente.');
     }
 }

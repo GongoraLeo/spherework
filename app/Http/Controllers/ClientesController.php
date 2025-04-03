@@ -12,7 +12,9 @@ class ClientesController extends Controller
      */
     public function index()
     {
-        //
+        $clientes = Clientes::all();
+        return view('clientes.index', compact('clientes'));
+        
     }
 
     /**
@@ -20,7 +22,7 @@ class ClientesController extends Controller
      */
     public function create()
     {
-        //
+        return view('clientes.create');
     }
 
     /**
@@ -28,7 +30,14 @@ class ClientesController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|max:255',
+            'email' => 'required|email|max:255',
+            'password' => 'required|min:8'
+        ]);
+        Clientes::create($request->all());
+        return redirect()->route('clientes.index')
+        ->with('success', 'Cliente creado correctamente.');
     }
 
     /**
@@ -36,7 +45,8 @@ class ClientesController extends Controller
      */
     public function show(Clientes $clientes)
     {
-        //
+        $clientes = Clientes::find($clientes->id);
+        return view('clientes.show', compact('clientes'));
     }
 
     /**
@@ -44,7 +54,8 @@ class ClientesController extends Controller
      */
     public function edit(Clientes $clientes)
     {
-        //
+        $clientes = Clientes::find($clientes->id);
+        return view('clientes.edit', compact('clientes'));
     }
 
     /**
@@ -52,7 +63,14 @@ class ClientesController extends Controller
      */
     public function update(Request $request, Clientes $clientes)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|max:255',
+            'email' => 'required|email|max:255',
+            'password' => 'required|min:8'
+        ]);
+        $clientes->update($request->all());
+        return redirect()->route('clientes.index')
+        ->with('success', 'Cliente actualizado correctamente.');
     }
 
     /**
@@ -60,6 +78,9 @@ class ClientesController extends Controller
      */
     public function destroy(Clientes $clientes)
     {
-        //
+        $clientes = Clientes::find($clientes->id);
+        $clientes->delete();
+        return redirect()->route('clientes.index')
+        ->with('success', 'Cliente eliminado correctamente.');
     }
 }

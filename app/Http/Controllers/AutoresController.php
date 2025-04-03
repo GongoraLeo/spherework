@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Autores;
 use Illuminate\Http\Request;
+use IlluminateSupportFacadesRoute;
+use AppHttpControllersAutoresController;
 
 class AutoresController extends Controller
 {
@@ -12,7 +14,8 @@ class AutoresController extends Controller
      */
     public function index()
     {
-        //
+        $autores = Autores::all();
+        return view('autores.index', compact('autores'));
     }
 
     /**
@@ -20,7 +23,7 @@ class AutoresController extends Controller
      */
     public function create()
     {
-        //
+        return view('autores.create');
     }
 
     /**
@@ -28,7 +31,13 @@ class AutoresController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|max:255',
+            'pais' => 'required|max:255'
+        ]);
+        Autores::create($request->all());
+        return redirect()->route('autores.index')
+        ->with('success', 'Autor creado correctamente.');
     }
 
     /**
@@ -36,7 +45,8 @@ class AutoresController extends Controller
      */
     public function show(Autores $autores)
     {
-        //
+        $autores = Autores::find($autores->id);
+        return view('autores.show', compact('autores'));
     }
 
     /**
@@ -44,7 +54,8 @@ class AutoresController extends Controller
      */
     public function edit(Autores $autores)
     {
-        //
+        $autores = Autores::find($autores->id);
+        return view('autores.edit', compact('autores'));
     }
 
     /**
@@ -52,7 +63,14 @@ class AutoresController extends Controller
      */
     public function update(Request $request, Autores $autores)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|max:255',
+            'pais' => 'required|max:255'
+        ]);
+        $autores = Autores::find($autores->id);
+        $autores->update($request->all());
+        return redirect()->route('autores.index')
+        ->with('success', 'Autor actualizado correctamente.');
     }
 
     /**
@@ -60,6 +78,9 @@ class AutoresController extends Controller
      */
     public function destroy(Autores $autores)
     {
-        //
+        $autores = Autores::find($autores->id);
+        $autores->delete();
+        return redirect()->route('autores.index')
+        ->with('success', 'Autor eliminado correctamente.');
     }
 }

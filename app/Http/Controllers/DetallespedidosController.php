@@ -12,7 +12,8 @@ class DetallespedidosController extends Controller
      */
     public function index()
     {
-        //
+        $detallespedidos = Detallespedidos::all();
+        return view('detallespedidos.index', compact('detallespedidos'));
     }
 
     /**
@@ -20,7 +21,7 @@ class DetallespedidosController extends Controller
      */
     public function create()
     {
-        //
+        return view('detallespedidos.create');
     }
 
     /**
@@ -28,7 +29,17 @@ class DetallespedidosController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'pedido_id' => 'required|exists:pedidos,id',
+            'libro_id' => 'required|exists:libros,id',
+            'cantidad' => 'required|integer|min:1',
+            'precio' => 'required|numeric|min:0',
+        ]);
+
+        Detallespedidos::create($request->all());
+
+        return redirect()->route('detallespedidos.index')
+            ->with('success', 'Detalle de pedido creado correctamente.');
     }
 
     /**
@@ -36,7 +47,8 @@ class DetallespedidosController extends Controller
      */
     public function show(Detallespedidos $detallespedidos)
     {
-        //
+        $detallespedidos = Detallespedidos::find($detallespedidos->id);
+        return view('detallespedidos.show', compact('detallespedidos'));
     }
 
     /**
@@ -44,7 +56,8 @@ class DetallespedidosController extends Controller
      */
     public function edit(Detallespedidos $detallespedidos)
     {
-        //
+        $detallespedidos = Detallespedidos::find($detallespedidos->id);
+        return view('detallespedidos.edit', compact('detallespedidos'));
     }
 
     /**
@@ -52,7 +65,18 @@ class DetallespedidosController extends Controller
      */
     public function update(Request $request, Detallespedidos $detallespedidos)
     {
-        //
+        $request->validate([
+            'pedido_id' => 'required|exists:pedidos,id',
+            'libro_id' => 'required|exists:libros,id',
+            'cantidad' => 'required|integer|min:1',
+            'precio' => 'required|numeric|min:0',
+        ]);
+
+        $detallespedidos = Detallespedidos::find($detallespedidos->id);
+        $detallespedidos->update($request->all());
+
+        return redirect()->route('detallespedidos.index')
+            ->with('success', 'Detalle de pedido actualizado correctamente.');
     }
 
     /**
@@ -60,6 +84,10 @@ class DetallespedidosController extends Controller
      */
     public function destroy(Detallespedidos $detallespedidos)
     {
-        //
+        $detallespedidos = Detallespedidos::find($detallespedidos->id);
+        $detallespedidos->delete();
+
+        return redirect()->route('detallespedidos.index')
+            ->with('success', 'Detalle de pedido eliminado correctamente.');
     }
 }

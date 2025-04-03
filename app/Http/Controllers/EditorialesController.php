@@ -12,7 +12,8 @@ class EditorialesController extends Controller
      */
     public function index()
     {
-        //
+        $editoriales = Editoriales::all();
+        return view('editoriales.index', compact('editoriales'));
     }
 
     /**
@@ -20,7 +21,7 @@ class EditorialesController extends Controller
      */
     public function create()
     {
-        //
+        return view('editoriales.create');
     }
 
     /**
@@ -28,7 +29,15 @@ class EditorialesController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|max:255',
+            'pais' => 'required|max:255'
+        ]);
+
+        Editoriales::create($request->all());
+
+        return redirect()->route('editoriales.index')
+            ->with('success', 'Editorial creada correctamente.');
     }
 
     /**
@@ -36,7 +45,8 @@ class EditorialesController extends Controller
      */
     public function show(Editoriales $editoriales)
     {
-        //
+        $editoriales = Editoriales::find($editoriales->id);
+        return view('editoriales.show', compact('editoriales'));
     }
 
     /**
@@ -44,7 +54,8 @@ class EditorialesController extends Controller
      */
     public function edit(Editoriales $editoriales)
     {
-        //
+        $editoriales = Editoriales::find($editoriales->id);
+        return view('editoriales.edit', compact('editoriales'));
     }
 
     /**
@@ -52,7 +63,15 @@ class EditorialesController extends Controller
      */
     public function update(Request $request, Editoriales $editoriales)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|max:255',
+            'pais' => 'required|max:255'
+        ]);
+
+        $editoriales->update($request->all());
+
+        return redirect()->route('editoriales.index')
+            ->with('success', 'Editorial actualizada correctamente.');
     }
 
     /**
@@ -60,6 +79,10 @@ class EditorialesController extends Controller
      */
     public function destroy(Editoriales $editoriales)
     {
-        //
+        $editoriales = Editoriales::find($editoriales->id);
+        $editoriales->delete();
+
+        return redirect()->route('editoriales.index')
+            ->with('success', 'Editorial eliminada correctamente.');
     }
 }
