@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             LibrosSeeder::class,       // Después de Autores y Editoriales
             PedidosSeeder::class,      // Después de Clientes (y Empleados si aplica)
             DetallespedidosSeeder::class, // Después de Pedidos y Libros
-            ComentarioSeeder::class,  // Después de Clientes y Libros
+            ComentariosSeeder::class,  // Después de Clientes y Libros
         ]);
 
         // Ejemplo para sembrar la tabla pivote libros_clientes (si la necesitas)

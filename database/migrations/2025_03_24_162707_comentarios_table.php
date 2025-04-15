@@ -13,16 +13,27 @@ return new class extends Migration
     {
         Schema::create('comentarios', function (Blueprint $table) {
             $table->id();
-            $table->text('comentario');
-            $table->integer('puntuacion');
-            $table->date('fecha');
-            
-            $table->foreignId('libro_id');
-            $table->foreignId('cliente_id');
+            $table->text('comentario'); // Columna para el texto
+            $table->integer('puntuacion')->nullable(); // Puntuación opcional
 
-            $table->timestamps();
+            // Columnas para las relaciones
+            $table->foreignId('libro_id');
+            $table->foreignId('user_id'); // Reemplaza cliente_id
+
+            $table->timestamps(); // created_at y updated_at
+
+            // Definir claves foráneas
+            // Asegúrate que las tablas 'libros' y 'users' se creen antes.
+            $table->foreign('libro_id')
+                  ->references('id')
+                  ->on('libros')
+                  ->onDelete('cascade');
+
+            $table->foreign('user_id')
+                  ->references('id')
+                  ->on('users')
+                  ->onDelete('cascade');
         });
-            
     }
 
     /**

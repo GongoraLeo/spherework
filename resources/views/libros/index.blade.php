@@ -28,6 +28,19 @@
         </div>
     @endif
 
+    {{-- ***** INICIO: Mensaje de Bienvenida ***** --}}
+    <div class="mb-6 p-4 bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg text-center">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            ¡Bienvenido/a a SphereWork!
+        </h2>
+        <p class="text-gray-600 dark:text-gray-400 mt-1">
+            Explora nuestro extenso catálogo de libros y encuentra tu próxima lectura.
+        </p>
+        {{-- Puedes añadir más elementos aquí si lo deseas, como un enlace a "Novedades" o "Más vendidos" --}}
+    </div>
+    {{-- ***** FIN: Mensaje de Bienvenida ***** --}}
+
+
     {{-- Contenedor tipo tarjeta/lista para los libros --}}
     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-6 text-gray-900 dark:text-gray-100">
@@ -108,6 +121,15 @@
                 @endforelse
 
             </div> {{-- Fin de la rejilla --}}
+
+            {{-- Paginación (si la estás usando en el controlador) --}}
+            {{-- Asegúrate de que $libros sea una instancia de Paginator --}}
+            @if ($libros instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                <div class="mt-8">
+                    {{ $libros->links() }}
+                </div>
+            @endif
+
         </div>
     </div>
 

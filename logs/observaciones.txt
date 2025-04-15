@@ -9,11 +9,15 @@ hay que revisar las relaciones entre tablas y si se necesita alguna mas para la 
 **Rutas de login y register**
 **Hay que crear o completar todo lo relacionado con la autenticacion de usuarios**
 
-seeders con datos para probarlo bien
+**seeders con datos para probarlo bien**
 
 hay que hacer back office para los empleados y los clientes
+pagina de cliente donde ver estadisticas
+pagina de empleado donde ver estadisticas de clientes
 
-hay que crear una pagina de bienvenida a la tienda
+carrito
+
+**hay que crear una pagina de bienvenida a la tienda**
 
 **debe dejar entrar como usuario anonimo y que no entre directamente en el login, ni de error al intentar entrar en otra página**
 
