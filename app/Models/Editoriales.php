@@ -12,9 +12,7 @@ class Editoriales extends Model
 
     protected $fillable = [
         'nombre',
-        'direccion',
-        'telefono',
-        'email'
+        'pais',
     ];
 
     // Relación uno a muchos con la tabla libros

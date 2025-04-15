@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Libros;
 use Illuminate\Http\Request;
+use App\Models\Autores;
+use App\Models\Editoriales;
 
 class LibrosController extends Controller
 {
@@ -12,7 +14,8 @@ class LibrosController extends Controller
      */
     public function index()
     {
-        $libros = Libros::all();
+        // Carga eficiente de relaciones
+        $libros = Libros::with(['autor', 'editorial'])->orderBy('titulo')->get();
         return view('libros.index', compact('libros'));
     }
 
@@ -21,7 +24,13 @@ class LibrosController extends Controller
      */
     public function create()
     {
-        return view('libros.create');
+        // Obtener todos los autores ordenados por nombre
+        $autores = Autores::orderBy('nombre')->get();
+        // Obtener todas las editoriales ordenadas por nombre
+        $editoriales = Editoriales::orderBy('nombre')->get();
+
+        // Pasar los autores y editoriales a la vista
+        return view('libros.create', compact('autores', 'editoriales'));
     }
 
     /**
@@ -35,6 +44,8 @@ class LibrosController extends Controller
             'editorial_id' => 'required|exists:editoriales,id',
             'anio_publicacion' => 'required|integer|min:1900|max:' . date('Y'),
             'isbn' => 'required|unique:libros,isbn|max:13',
+            'precio' => 'required|numeric|min:0',
+
             ]);
 
         Libros::create($request->all());

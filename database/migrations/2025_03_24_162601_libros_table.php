@@ -16,6 +16,8 @@ return new class extends Migration {
             $table->string('isbn');
             $table->integer('anio_publicacion');
 
+            $table->decimal('precio', 8, 2);
+
             $table->foreignId('autor_id');
             $table->foreignId('editorial_id');
 

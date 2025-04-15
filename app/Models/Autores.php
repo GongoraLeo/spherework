@@ -12,10 +12,7 @@ class Autores extends Model
     // Definimos los campos que se pueden llenar
     protected $fillable = [
         'nombre',
-        'apellidos',
-        'nacionalidad',
-        'fecha_nacimiento',
-        'fecha_fallecimiento'
+        'pais',
     ];
 
     // Relación uno a muchos con la tabla libros

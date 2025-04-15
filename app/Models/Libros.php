@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Models\Autores;
 use App\Models\Editoriales;
+
 
 class Libros extends Model
 {
@@ -21,17 +21,22 @@ class Libros extends Model
         'isbn',
         'anio_publicacion',
         'autor_id',
-        'editorial_id'
+        'editorial_id',
+        'precio'
     ];
 
     //debe tener una relacion uno a muchos con la tabla autores y otra relacion en este caso uno a uno con la tabla editoriales
+    // ... (use HasFactory, $table, $fillable) ...
+
     public function autor(): BelongsTo
     {
         return $this->belongsTo(Autores::class, 'autor_id');
     }
-    public function editorial(): HasOne
+
+    // CORREGIDO: Un libro pertenece a una editorial
+    public function editorial(): BelongsTo
     {
-        return $this->hasOne(Editoriales::class, 'editorial_id');
+        return $this->belongsTo(Editoriales::class, 'editorial_id');
     }
 
     //relacion uno a muchos con la tabla comentarios

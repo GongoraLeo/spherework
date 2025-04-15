@@ -12,7 +12,6 @@ class Pedidos extends Model
     // Definimos los campos que se pueden llenar
     protected $fillable = [
         'cliente_id',
-        'empleado_id',
         'fecha_pedido',
         'estado'
     ];

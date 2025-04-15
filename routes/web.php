@@ -12,13 +12,8 @@ use App\Http\Controllers\EmpleadosController;
 use App\Http\Controllers\EditorialesController;
 use App\Http\Controllers\ProfileController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', LibrosController::class . '@index')->name('libros.index');
 
-Route::get('/killo', function () {
-    return 'Killo ke es lo ke dise tú que no hay quien tentienda!';
-});
 
 //Rutas del controlador de Autores
 Route::get('/autores', AutoresController::class . '@index')->name('autores.index');
