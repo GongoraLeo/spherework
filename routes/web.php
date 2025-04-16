@@ -10,6 +10,8 @@ use App\Http\Controllers\PedidosController;
 use App\Http\Controllers\EmpleadosController;
 use App\Http\Controllers\EditorialesController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\ProfileEntryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,10 +49,33 @@ Route::middleware('auth')->group(function () {
         return view('dashboard');
     })->middleware('verified')->name('dashboard'); // 'verified' si usas verificación de email
 
-    // Perfil de Usuario (Breeze)
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // NUEVA RUTA DE ENTRADA AL PERFIL (para el enlace del menú)
+    Route::get('/profile-entry', ProfileEntryController::class)->name('profile.entry');
+
+    // --- RUTAS DE ADMINISTRACIÓN ---
+    // Middleware adicional opcional para rol: ->middleware('role:administrador')
+
+    // NUEVA RUTA PARA EL PANEL DE ADMIN
+    Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+         ->name('admin.dashboard'); // Nombre de la ruta
+    
+    // Rutas para gestión de clientes por el admin
+    Route::get('/admin/clientes', [ClientesController::class, 'index'])->name('clientes.index');
+    Route::get('/admin/clientes/{cliente}', [ClientesController::class, 'show'])->name('clientes.show'); // {cliente} debe coincidir con el nombre del parámetro en el método show (User $cliente)
+    // Route::get('/admin/clientes/{cliente}/edit', [ClientesController::class, 'edit'])->name('clientes.edit');
+    // Route::put('/admin/clientes/{cliente}', [ClientesController::class, 'update'])->name('clientes.update');
+    // Route::delete('/admin/clientes/{cliente}', [ClientesController::class, 'destroy'])->name('clientes.destroy');
+
+
+
+
+    // Perfil de Usuario (Breeze/Custom)
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show'); // Panel de usuario
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update'); // La URL para actualizar puede seguir siendo /profile con PATCH
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy'); // La URL para borrar puede seguir siendo /profile con DELETE
+
+
 
     // Carrito de Compras (Detallespedidos)
     Route::get('/detallespedidos', [DetallespedidosController::class, 'index'])->name('detallespedidos.index'); // Ver carrito
@@ -61,7 +86,9 @@ Route::middleware('auth')->group(function () {
 
     // Comentarios
     Route::post('/comentarios', [ComentariosController::class, 'store'])->name('comentarios.store'); // Crear comentario
-    Route::put('/comentarios/{comentarios}', [ComentariosController::class, 'update'])->name('comentarios.update'); // Actualizar (si se permite)
+    Route::get('/comentarios/{comentarios}/edit', [ComentariosController::class, 'edit'])->name('comentarios.edit');
+    Route::match(['put', 'patch'], '/comentarios/{comentarios}', [ComentariosController::class, 'update'])->name('comentarios.update');
+
     Route::delete('/comentarios/{comentarios}', [ComentariosController::class, 'destroy'])->name('comentarios.destroy'); // Eliminar (si se permite)
     // Nota: index, create, show, edit para comentarios podrían ser solo para admin
 
@@ -102,15 +129,15 @@ Route::middleware('auth')->group(function () {
     Route::put('/pedidos/{pedidos}', [PedidosController::class, 'update'])->name('pedidos.update'); // Actualizar pedido
     Route::delete('/pedidos/{pedidos}', [PedidosController::class, 'destroy'])->name('pedidos.destroy'); // Eliminar pedido
 
-    // Gestión de Clientes (Vista Admin - Usuarios con rol 'cliente')
-    // Asumiendo que ClientesController gestiona Users con rol cliente
-    Route::get('/clientes', [ClientesController::class, 'index'])->name('clientes.index');
-    Route::get('/clientes/create', [ClientesController::class, 'create'])->name('clientes.create');
-    Route::post('/clientes', [ClientesController::class, 'store'])->name('clientes.store');
-    Route::get('/clientes/{clientes}', [ClientesController::class, 'show'])->name('clientes.show'); // Usar {user} o {cliente}? Depende del modelo/param
-    Route::get('/clientes/{clientes}/edit', [ClientesController::class, 'edit'])->name('clientes.edit');
-    Route::put('/clientes/{clientes}', [ClientesController::class, 'update'])->name('clientes.update');
-    Route::delete('/clientes/{clientes}', [ClientesController::class, 'destroy'])->name('clientes.destroy');
+    // // Gestión de Clientes (Vista Admin - Usuarios con rol 'cliente')
+    // // Asumiendo que ClientesController gestiona Users con rol cliente
+    // Route::get('/clientes', [ClientesController::class, 'index'])->name('clientes.index');
+    // Route::get('/clientes/create', [ClientesController::class, 'create'])->name('clientes.create');
+    // Route::post('/clientes', [ClientesController::class, 'store'])->name('clientes.store');
+    // Route::get('/clientes/{clientes}', [ClientesController::class, 'show'])->name('clientes.show'); // Usar {user} o {cliente}? Depende del modelo/param
+    // Route::get('/clientes/{clientes}/edit', [ClientesController::class, 'edit'])->name('clientes.edit');
+    // Route::put('/clientes/{clientes}', [ClientesController::class, 'update'])->name('clientes.update');
+    // Route::delete('/clientes/{clientes}', [ClientesController::class, 'destroy'])->name('clientes.destroy');
 
     // Gestión de Empleados (Vista Admin - Usuarios con rol 'admin'/'gestor')
     // Asumiendo que EmpleadosController gestiona Users con esos roles

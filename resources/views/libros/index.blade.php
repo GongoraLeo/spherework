@@ -1,20 +1,6 @@
 {{-- filepath: resources/views/libros/index.blade.php --}}
 <x-app-layout>
-    {{-- Encabezado con Título y Botón Crear --}}
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Catálogo de Libros</h1>
-
-        {{-- Botón Crear Libro (Solo para administradores) --}}
-        @auth
-            {{-- Comprueba si el rol del usuario es 'administrador' --}}
-            @if(Auth::user()->rol === 'administrador')
-                <a href="{{ route('libros.create') }}"
-                   class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500 active:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    {{ __('Añadir Nuevo Libro') }}
-                </a>
-            @endif
-        @endauth
-    </div>
+    
 
     {{-- Mensajes de éxito/error --}}
     @if (session('success'))
@@ -30,16 +16,42 @@
 
     {{-- ***** INICIO: Mensaje de Bienvenida ***** --}}
     <div class="mb-6 p-4 bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg text-center">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
             ¡Bienvenido/a a SphereWork!
         </h2>
-        <p class="text-gray-600 dark:text-gray-400 mt-1">
-            Explora nuestro extenso catálogo de libros y encuentra tu próxima lectura.
+        <br>
+        <p class="text-left text-gray-600 dark:text-gray-400 mt-1">
+            ¡Bienvenido a SphereWorks, tu librería online de confianza! Aquí encontrarás un universo de historias, conocimiento e inspiración al alcance de un clic. Nos apasionan los libros y queremos compartir contigo una cuidada selección de títulos que van desde los grandes clásicos hasta las últimas novedades editoriales. Ya seas amante de la ficción, la no ficción, los libros técnicos o los cuentos infantiles, en SphereWorks tenemos algo para ti.
         </p>
+        <p class="text-left text-gray-600 dark:text-gray-400 mt-1">
+            Además, contamos con herramientas pensadas para mejorar tu experiencia: valoraciones y comentarios de otros lectores, recomendaciones personalizadas y una gestión sencilla de tus pedidos. Navega, descubre y déjate llevar por las palabras.
+        </p>
+        <p class="text-left text-gray-600 dark:text-gray-400 mt-1">
+            Nuestro compromiso es ofrecerte un servicio cercano, rápido y seguro, porque sabemos que cada libro es una puerta abierta a nuevos mundos. Gracias por formar parte de esta comunidad lectora.
+        </p>
+        <p class="text-gray-600 dark:text-gray-400 mt-1">
+            ¡Empieza tu próxima aventura literaria con nosotros!
+        </p>
+        
         {{-- Puedes añadir más elementos aquí si lo deseas, como un enlace a "Novedades" o "Más vendidos" --}}
     </div>
     {{-- ***** FIN: Mensaje de Bienvenida ***** --}}
 
+    {{-- Encabezado con Título y Botón Crear --}}
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Catálogo de Libros</h1>
+
+        {{-- Botón Crear Libro (Solo para administradores) --}}
+        @auth
+            {{-- Comprueba si el rol del usuario es 'administrador' --}}
+            @if(Auth::user()->rol === 'administrador')
+                <a href="{{ route('libros.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500 active:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                    {{ __('Añadir Nuevo Libro') }}
+                </a>
+            @endif
+        @endauth
+    </div>
 
     {{-- Contenedor tipo tarjeta/lista para los libros --}}
     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">

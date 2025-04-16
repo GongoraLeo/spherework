@@ -9,9 +9,9 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             {{-- Card for Book Details --}}
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-8"> {{-- Added mb-8 --}}
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-8">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
-
+                    {{-- ... (Detalles del libro y botón Añadir al Carrito sin cambios) ... --}}
                     {{-- Book Title --}}
                     <h1 class="text-3xl font-bold mb-4">{{ $libros->titulo }}</h1>
 
@@ -34,7 +34,6 @@
                     {{-- Add to Cart Form --}}
                     <div class="mb-6 border-t border-gray-200 dark:border-gray-700 pt-6">
                         @auth
-                            {{-- Asegúrate que la ruta detallespedidos.store exista y sea correcta --}}
                             <form method="POST" action="{{ route('detallespedidos.store') }}">
                                 @csrf
                                 <input type="hidden" name="libro_id" value="{{ $libros->id }}">
@@ -73,42 +72,47 @@
                             @endif
                         @endauth
                     </div>
-
                 </div>
             </div> {{-- End Book Details Card --}}
 
             {{-- ***** START: Comments Section ***** --}}
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <h2 class="text-2xl font-semibold mb-6">Comentarios</h2>
+                    <h2 class="text-2xl font-semibold mb-6">Comentarios y Valoraciones</h2>
 
                     {{-- Display Existing Comments --}}
                     <div class="space-y-6">
-                        {{-- Asegúrate que $libros->comentarios y $comentario->user estén cargados (hecho en LibrosController@show) --}}
                         @forelse ($libros->comentarios as $comentario)
                             <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-                                <div class="flex items-center mb-2">
-                                    {{-- User Avatar (Optional) --}}
-                                    {{-- <img class="h-8 w-8 rounded-full mr-3" src="{{ $comentario->user->profile_photo_url ?? asset('images/default-avatar.png') }}" alt="{{ $comentario->user->name ?? 'Usuario' }}"> --}}
-                                    <div>
-                                        <p class="font-semibold text-gray-900 dark:text-gray-100">{{ $comentario->user->name ?? 'Usuario desconocido' }}</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400" title="{{ $comentario->created_at->format('d/m/Y H:i:s') }}">
-                                            {{ $comentario->created_at->diffForHumans() }}
-                                        </p>
+                                <div class="flex items-start justify-between mb-2"> {{-- Changed to items-start for better alignment with rating --}}
+                                    <div class="flex items-center">
+                                        {{-- User Avatar (Optional) --}}
+                                        {{-- <img class="h-8 w-8 rounded-full mr-3" src="{{ $comentario->user->profile_photo_url ?? asset('images/default-avatar.png') }}" alt="{{ $comentario->user->name ?? 'Usuario' }}"> --}}
+                                        <div>
+                                            <p class="font-semibold text-gray-900 dark:text-gray-100">{{ $comentario->user->name ?? 'Usuario desconocido' }}</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400" title="{{ $comentario->created_at->format('d/m/Y H:i:s') }}">
+                                                {{ $comentario->created_at->diffForHumans() }}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                                {{-- CORREGIDO: Mostrar la propiedad 'comentario' del objeto $comentario --}}
-                                <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ $comentario->comentario }}</p>
-                                {{-- Optional: Add delete button for admin or comment owner --}}
-                                {{-- @auth
-                                    @if(Auth::id() === $comentario->user_id || Auth::user()->rol === 'administrador')
-                                        <form action="{{ route('comentarios.destroy', $comentario->id) }}" method="POST" class="mt-2 text-right">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-xs text-red-500 hover:text-red-700" onclick="return confirm('¿Eliminar este comentario?')">Eliminar</button>
-                                        </form>
+                                    {{-- ***** MODIFICADO AQUÍ: Mostrar Puntuación si existe ***** --}}
+                                    @if($comentario->puntuacion)
+                                        <div class="text-yellow-500 text-sm flex items-center">
+                                            {{-- Muestra estrellas llenas y vacías --}}
+                                            @for ($i = 1; $i <= 5; $i++)
+                                                @if ($i <= $comentario->puntuacion)
+                                                    <svg class="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                                                @else
+                                                    <svg class="w-4 h-4 fill-current text-gray-300 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                                                @endif
+                                            @endfor
+                                            <span class="ml-1">({{ $comentario->puntuacion }})</span>
+                                        </div>
                                     @endif
-                                @endauth --}}
+                                    {{-- ***** FIN MODIFICACIÓN ***** --}}
+                                </div>
+                                <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ $comentario->comentario }}</p>
+                                {{-- ... (Botón eliminar comentario opcional) ... --}}
                             </div>
                         @empty
                             <p class="text-gray-500 dark:text-gray-400">Aún no hay comentarios para este libro. ¡Sé el primero!</p>
@@ -118,17 +122,34 @@
                     {{-- Add Comment Form (Only for logged-in users) --}}
                     @auth
                         <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                            <h3 class="text-lg font-semibold mb-4">Deja tu comentario</h3>
-                            {{-- Asegúrate que la ruta comentarios.store exista y sea correcta --}}
+                            <h3 class="text-lg font-semibold mb-4">Deja tu comentario y valoración</h3>
                             <form action="{{ route('comentarios.store') }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="libro_id" value="{{ $libros->id }}">
 
+                                {{-- ***** MODIFICADO AQUÍ: Añadir campo de Puntuación ***** --}}
                                 <div class="mb-4">
-                                    <x-input-label for="texto" :value="__('Comentario')" class="sr-only"/>
-                                    {{-- El name="texto" coincide con la validación en ComentariosController@store --}}
+                                    <x-input-label for="puntuacion" :value="__('Tu valoración (opcional)')" />
+                                    <div class="flex items-center space-x-2 mt-1" x-data="{ rating: {{ old('puntuacion', 0) }} }">
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            <label for="puntuacion_{{ $i }}" class="cursor-pointer">
+                                                <input type="radio" name="puntuacion" id="puntuacion_{{ $i }}" value="{{ $i }}" class="sr-only" x-model="rating">
+                                                <svg class="w-6 h-6 fill-current" :class="rating >= {{ $i }} ? 'text-yellow-500' : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                                                </svg>
+                                            </label>
+                                        @endfor
+                                        {{-- Botón opcional para limpiar la selección --}}
+                                        <button type="button" @click="rating = 0; document.querySelectorAll('input[name=puntuacion]').forEach(el => el.checked = false)" x-show="rating > 0" class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 ml-2">Limpiar</button>
+                                    </div>
+                                    <x-input-error :messages="$errors->get('puntuacion')" class="mt-2" />
+                                </div>
+                                {{-- ***** FIN MODIFICACIÓN ***** --}}
+
+                                <div class="mb-4">
+                                    <x-input-label for="texto" :value="__('Comentario')" /> {{-- Label visible es mejor --}}
                                     <textarea name="texto" id="texto" rows="4" required
-                                              class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                              class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
                                               placeholder="Escribe tu comentario aquí..."
                                     >{{ old('texto') }}</textarea>
                                     <x-input-error :messages="$errors->get('texto')" class="mt-2" />
@@ -136,14 +157,14 @@
 
                                 <div class="flex justify-end">
                                     <x-primary-button>
-                                        {{ __('Publicar Comentario') }}
+                                        {{ __('Publicar') }} {{-- Texto más corto --}}
                                     </x-primary-button>
                                 </div>
                             </form>
                         </div>
                     @else
                         <p class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-center text-gray-600 dark:text-gray-400">
-                            <a href="{{ route('login') }}" class="text-blue-600 dark:text-blue-400 hover:underline">Inicia sesión</a> para dejar un comentario.
+                            <a href="{{ route('login') }}" class="text-blue-600 dark:text-blue-400 hover:underline">Inicia sesión</a> para dejar un comentario y valoración.
                         </p>
                     @endauth
 
@@ -153,4 +174,7 @@
 
         </div>
     </div>
+    {{-- Alpine.js es necesario para la interacción de las estrellas en el formulario --}}
+    {{-- Asegúrate de que Alpine.js esté incluido en tu layout principal o impórtalo aquí si no lo está --}}
+    {{-- <script src="//unpkg.com/alpinejs" defer></script> --}}
 </x-app-layout>

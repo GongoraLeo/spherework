@@ -39,17 +39,10 @@
                     {{-- Enlaces solo para usuarios autenticados --}}
                     @auth
                         {{-- Carrito (Visible para todos los logueados) --}}
-                        {{-- ***** INICIO: Enlace Carrito (Desktop) ***** --}}
                         <a href="{{ route('detallespedidos.index') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('detallespedidos.index') ? 'bg-blue-800' : '' }}">
                             Carrito
                             {{-- Opcional: Añadir contador de items aquí si lo implementas --}}
-                            {{-- @inject('cartService', 'App\Services\CartService') --}}
-                            {{-- @if($cartService->count() > 0) --}}
-                            {{-- <span class="ml-1 bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5">{{ $cartService->count() }}</span> --}}
-                            {{-- @endif --}}
                         </a>
-                        {{-- ***** FIN: Enlace Carrito (Desktop) ***** --}}
-
 
                         {{-- Autores (Visible solo si NO es cliente logueado) --}}
                         @if(Auth::user()->rol != 'cliente')
@@ -57,8 +50,11 @@
                         @endif
                         {{-- Fin Condición Autores --}}
 
-                        {{-- Perfil --}}
-                        <a href="{{ route('profile.edit') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('profile.edit') ? 'bg-blue-800' : '' }}">Perfil</a>
+                        {{-- ***** MODIFICADO AQUÍ (Desktop) ***** --}}
+                        {{-- Apunta a la ruta de entrada que redirige según rol --}}
+                        {{-- Marca como activo si está en el perfil de cliente o en el dashboard de admin --}}
+                        <a href="{{ route('profile.entry') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs(['profile.show', 'admin.dashboard']) ? 'bg-blue-800' : '' }}">Perfil</a>
+                        {{-- ***** FIN MODIFICACIÓN (Desktop) ***** --}}
 
                         {{-- Logout --}}
                         <form method="POST" action="{{ route('logout') }}" class="inline">
@@ -103,20 +99,21 @@
                 {{-- Enlaces solo para usuarios autenticados (Mobile) --}}
                 @auth
                     {{-- Carrito (Mobile) --}}
-                    {{-- ***** INICIO: Enlace Carrito (Mobile) ***** --}}
                     <a href="{{ route('detallespedidos.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('detallespedidos.index') ? 'bg-blue-800' : '' }}">
                         Carrito
                         {{-- Opcional: Añadir contador de items aquí --}}
                     </a>
-                    {{-- ***** FIN: Enlace Carrito (Mobile) ***** --}}
 
                     {{-- Autores (Mobile) --}}
                     @if(Auth::user()->rol != 'cliente')
                         <a href="{{ route('autores.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('autores.index') ? 'bg-blue-800' : '' }}">Autores</a>
                     @endif
 
-                    {{-- Perfil (Mobile) --}}
-                    <a href="{{ route('profile.edit') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('profile.edit') ? 'bg-blue-800' : '' }}">Perfil</a>
+                    {{-- ***** MODIFICADO AQUÍ (Mobile) ***** --}}
+                    {{-- Apunta a la ruta de entrada que redirige según rol --}}
+                    {{-- Marca como activo si está en el perfil de cliente o en el dashboard de admin --}}
+                    <a href="{{ route('profile.entry') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs(['profile.show', 'admin.dashboard']) ? 'bg-blue-800' : '' }}">Perfil</a>
+                    {{-- ***** FIN MODIFICACIÓN (Mobile) ***** --}}
 
                     {{-- Logout (Mobile) --}}
                     <form method="POST" action="{{ route('logout') }}" class="block">
@@ -142,20 +139,25 @@
 
     <!-- Page Content -->
     <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {{-- Session Messages (Movidos aquí desde el layout original para evitar duplicados si $slot los incluye) --}}
-        {{-- Si tus vistas individuales (como libros.index) ya muestran mensajes, puedes eliminar estos --}}
-        {{-- @if (session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <strong class="font-bold">Success!</strong>
+        {{-- Session Messages (Opcional) --}}
+        @if (session('success'))
+            <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                <strong class="font-bold">¡Éxito!</strong>
                 <span class="block sm:inline">{{ session('success') }}</span>
             </div>
         @endif
          @if (session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <strong class="font-bold">Error!</strong>
+            <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <strong class="font-bold">¡Error!</strong>
                 <span class="block sm:inline">{{ session('error') }}</span>
             </div>
-        @endif --}}
+        @endif
+         @if (session('info'))
+            <div class="mb-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative" role="alert">
+                <strong class="font-bold">Info:</strong>
+                <span class="block sm:inline">{{ session('info') }}</span>
+            </div>
+        @endif
 
         {{-- Main Content Area --}}
         {{ $slot }}
@@ -180,17 +182,17 @@
         const menu = document.getElementById('mobile-menu');
         if (btn && menu) {
             const icons = btn.querySelectorAll('svg');
-            menu.classList.add('hidden');
+            menu.classList.add('hidden'); // Asegura que esté oculto al cargar
             if (icons.length > 1) {
-                 icons[1].classList.add('hidden');
-                 icons[0].classList.remove('hidden');
+                 icons[1].classList.add('hidden'); // Oculta el icono de cerrar
+                 icons[0].classList.remove('hidden'); // Muestra el icono de hamburguesa
             }
             btn.addEventListener('click', () => {
                 const expanded = btn.getAttribute('aria-expanded') === 'true' || false;
                 btn.setAttribute('aria-expanded', !expanded);
                 menu.classList.toggle('hidden');
                 if (icons.length > 1) {
-                    icons[0].classList.toggle('hidden');
+                    icons[0].classList.toggle('hidden'); // Alterna visibilidad de iconos
                     icons[1].classList.toggle('hidden');
                 }
             });

@@ -15,7 +15,7 @@ hay que hacer back office para los empleados y los clientes
 pagina de cliente donde ver estadisticas
 pagina de empleado donde ver estadisticas de clientes
 
-carrito
+**carrito**
 
 **hay que crear una pagina de bienvenida a la tienda**
 

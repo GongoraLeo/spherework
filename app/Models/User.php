@@ -6,6 +6,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany; // Importa HasMany
+
+// Importa los modelos relacionados
+use App\Models\Pedidos;
+use App\Models\Comentarios;
 
 class User extends Authenticatable
 {
@@ -47,4 +52,26 @@ class User extends Authenticatable
             'rol' => 'string',
         ];
     }
+
+    // --- NUEVAS RELACIONES AÑADIDAS ---
+
+    /**
+     * Obtiene los pedidos asociados al usuario.
+     * Nota: Usa 'cliente_id' como clave foránea según tu migración de pedidos.
+     */
+    public function pedidos(): HasMany
+    {
+        return $this->hasMany(Pedidos::class, 'cliente_id'); // Usa 'cliente_id'
+    }
+
+    /**
+     * Obtiene los comentarios asociados al usuario.
+     * Nota: Usa 'user_id' como clave foránea según tu migración de comentarios.
+     */
+    public function comentarios(): HasMany
+    {
+        return $this->hasMany(Comentarios::class, 'user_id'); // Usa 'user_id'
+    }
+
+    // --- FIN NUEVAS RELACIONES ---
 }
