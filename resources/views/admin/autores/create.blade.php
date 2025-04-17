@@ -11,7 +11,7 @@
                     <h1 class="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-900">Crear Nuevo Autor</h1>
 
                     {{-- Formulario para crear el autor --}}
-                    <form method="POST" action="{{ route('autores.store') }}">
+                    <form method="POST" action="{{ route('admin.autores.store') }}">
                         @csrf
 
                         {{-- Campo para el Nombre del Autor --}}
@@ -43,7 +43,7 @@
 
                         {{-- Botones de Acción --}}
                         <div class="flex items-center justify-end mt-6">
-                            <a href="{{ route('autores.index') }}" class="text-sm text-gray-600 dark:text-gray-700 hover:text-gray-900 dark:hover:text-black rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-200">
+                            <a href="{{ route('admin.autores.index') }}" class="text-sm text-gray-600 dark:text-gray-700 hover:text-gray-900 dark:hover:text-black rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-200">
                                 {{ __('Cancelar') }}
                             </a>
 

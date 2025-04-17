@@ -27,14 +27,14 @@
                     {{-- Botones de Acción y Volver (los dejamos alineados como estaban) --}}
                     <div class="flex items-center justify-between mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
                         {{-- Botón Volver --}}
-                        <a href="{{ route('autores.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-600 active:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <a href="{{ route('admin.autores.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-600 active:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             {{ __('Volver a la Lista') }}
                         </a>
 
                         {{-- Grupo de botones Editar y Eliminar --}}
                         <div class="flex space-x-2">
                             {{-- Botón Editar --}}
-                            <a href="{{ route('autores.edit', $autores) }}"
+                            <a href="{{ route('admin.autores.edit', $autores) }}"
                                title="Editar"
                                {{-- Reemplaza '...' con las clases de estilo que tenías --}}
                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 dark:focus:ring-offset-gray-800">
@@ -42,7 +42,7 @@
                             </a>
 
                             {{-- Botón Eliminar --}}
-                            <form method="POST" action="{{ route('autores.destroy', $autores) }}" class="inline">
+                            <form method="POST" action="{{ route('admin.autores.destroy', $autores) }}" class="inline">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"

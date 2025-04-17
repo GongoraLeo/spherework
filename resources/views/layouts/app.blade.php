@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'SphereWork')</title>
+    {{-- ***** REVERTIDO: Título estándar de Breeze/componente ***** --}}
+    <title>{{ config('app.name', 'SphereWork') }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -15,13 +16,13 @@
     <!-- Styles & Scripts (Using Vite) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <!-- Additional Page Specific Styles -->
-    @stack('styles')
+    {{-- Stacks eliminados, generalmente no se usan en el layout base con componentes --}}
+    {{-- @stack('styles') --}}
 
 </head>
-<body class="font-sans antialiased bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col"> {{-- Añadido dark mode a body --}}
+<body class="font-sans antialiased bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col">
 
-    <!-- TU Navigation Bar Personalizada (Azul) -->
+    {{-- TU Navigation Bar Personalizada (Azul) - SIN CAMBIOS --}}
     <nav class="bg-blue-700 shadow-md">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
@@ -34,27 +35,33 @@
 
                 <!-- Navigation Links (Desktop) -->
                 <div class="hidden md:flex items-center space-x-4">
+                    {{-- Enlace Libros Principal --}}
                     <a href="{{ route('libros.index') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('libros.index') ? 'bg-blue-800' : '' }}">Libros</a>
 
                     {{-- Enlaces solo para usuarios autenticados --}}
                     @auth
-                        {{-- Carrito (Visible para todos los logueados) --}}
-                        <a href="{{ route('detallespedidos.index') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('detallespedidos.index') ? 'bg-blue-800' : '' }}">
-                            Carrito
-                            {{-- Opcional: Añadir contador de items aquí si lo implementas --}}
-                        </a>
-
-                        {{-- Autores (Visible solo si NO es cliente logueado) --}}
-                        @if(Auth::user()->rol != 'cliente')
-                            <a href="{{ route('autores.index') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('autores.index') ? 'bg-blue-800' : '' }}">Autores</a>
+                        {{-- Carrito (Oculto para Admin) --}}
+                        @if(Auth::user()->rol !== 'administrador')
+                            <a href="{{ route('detallespedidos.index') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('detallespedidos.index') ? 'bg-blue-800' : '' }}">
+                                Carrito
+                            </a>
                         @endif
-                        {{-- Fin Condición Autores --}}
 
-                        {{-- ***** MODIFICADO AQUÍ (Desktop) ***** --}}
-                        {{-- Apunta a la ruta de entrada que redirige según rol --}}
-                        {{-- Marca como activo si está en el perfil de cliente o en el dashboard de admin --}}
+                        {{-- Enlaces específicos de Rol --}}
+                        @if(Auth::user()->rol === 'administrador')
+                            {{-- Enlaces solo para Administradores --}}
+                            <a href="{{ route('admin.autores.index') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.autores.*') ? 'bg-blue-800' : '' }}">Autores</a>
+                            <a href="{{ route('admin.editoriales.index') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.editoriales.*') ? 'bg-blue-800' : '' }}">Editoriales</a>
+                            <a href="{{ route('pedidos.index') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('pedidos.*') ? 'bg-blue-800' : '' }}">Pedidos</a>
+                            <a href="{{ route('admin.clientes.index') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.clientes.*') ? 'bg-blue-800' : '' }}">Clientes</a>
+                            {{-- Enlace "Gestion Libros" sigue eliminado --}}
+                        @else
+                            {{-- Enlaces para clientes --}}
+                            {{-- <a href="{{ route('pedidos.index') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('pedidos.*') ? 'bg-blue-800' : '' }}">Mis Pedidos</a> --}}
+                        @endif
+
+                        {{-- Perfil --}}
                         <a href="{{ route('profile.entry') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs(['profile.show', 'admin.dashboard']) ? 'bg-blue-800' : '' }}">Perfil</a>
-                        {{-- ***** FIN MODIFICACIÓN (Desktop) ***** --}}
 
                         {{-- Logout --}}
                         <form method="POST" action="{{ route('logout') }}" class="inline">
@@ -65,7 +72,7 @@
                         </form>
                     @endauth
 
-                    {{-- Enlaces solo para invitados (no logueados) --}}
+                    {{-- Enlaces solo para invitados --}}
                     @guest
                         <a href="{{ route('login') }}" class="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('login') ? 'bg-blue-800' : '' }}">Login</a>
                         @if (Route::has('register'))
@@ -75,6 +82,7 @@
                 </div>
 
                 <!-- Mobile Menu Button -->
+                {{-- ... botón menú móvil (sin cambios) ... --}}
                 <div class="-mr-2 flex md:hidden">
                     <button type="button" class="bg-blue-800 inline-flex items-center justify-center p-2 rounded-md text-gray-300 hover:text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-blue-800 focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
                         <span class="sr-only">Open main menu</span>
@@ -92,28 +100,37 @@
         </div>
 
         <!-- Mobile menu -->
+        {{-- ... menú móvil (sin cambios estructurales, solo enlaces internos) ... --}}
         <div class="md:hidden hidden" id="mobile-menu">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                 {{-- Enlace Libros Principal --}}
                 <a href="{{ route('libros.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('libros.index') ? 'bg-blue-800' : '' }}">Libros</a>
 
                 {{-- Enlaces solo para usuarios autenticados (Mobile) --}}
                 @auth
-                    {{-- Carrito (Mobile) --}}
-                    <a href="{{ route('detallespedidos.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('detallespedidos.index') ? 'bg-blue-800' : '' }}">
-                        Carrito
-                        {{-- Opcional: Añadir contador de items aquí --}}
-                    </a>
-
-                    {{-- Autores (Mobile) --}}
-                    @if(Auth::user()->rol != 'cliente')
-                        <a href="{{ route('autores.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('autores.index') ? 'bg-blue-800' : '' }}">Autores</a>
+                    {{-- Carrito (Oculto para Admin - Mobile) --}}
+                    @if(Auth::user()->rol !== 'administrador')
+                        <a href="{{ route('detallespedidos.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('detallespedidos.index') ? 'bg-blue-800' : '' }}">
+                            Carrito
+                        </a>
                     @endif
 
-                    {{-- ***** MODIFICADO AQUÍ (Mobile) ***** --}}
-                    {{-- Apunta a la ruta de entrada que redirige según rol --}}
-                    {{-- Marca como activo si está en el perfil de cliente o en el dashboard de admin --}}
+                    {{-- Enlaces específicos de Rol (Mobile) --}}
+                    @if(Auth::user()->rol === 'administrador')
+                         {{-- Enlaces solo para Administradores (Mobile) --}}
+                         <a href="{{ route('admin.autores.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('admin.autores.*') ? 'bg-blue-800' : '' }}">Autores</a>
+                         <a href="{{ route('admin.editoriales.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('admin.editoriales.*') ? 'bg-blue-800' : '' }}">Editoriales</a>
+                         <a href="{{ route('pedidos.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('pedidos.*') ? 'bg-blue-800' : '' }}">Pedidos</a>
+                         <a href="{{ route('admin.clientes.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('admin.clientes.*') ? 'bg-blue-800' : '' }}">Clientes</a>
+                         {{-- Enlace "Gestion Libros" sigue eliminado --}}
+
+                    @else
+                        {{-- Enlaces para clientes (Mobile) --}}
+                        {{-- <a href="{{ route('pedidos.index') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('pedidos.*') ? 'bg-blue-800' : '' }}">Mis Pedidos</a> --}}
+                    @endif
+
+                    {{-- Perfil (Mobile) --}}
                     <a href="{{ route('profile.entry') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs(['profile.show', 'admin.dashboard']) ? 'bg-blue-800' : '' }}">Perfil</a>
-                    {{-- ***** FIN MODIFICACIÓN (Mobile) ***** --}}
 
                     {{-- Logout (Mobile) --}}
                     <form method="POST" action="{{ route('logout') }}" class="block">
@@ -126,6 +143,7 @@
 
                 {{-- Enlaces solo para invitados (Mobile) --}}
                 @guest
+                    {{-- ... guest links ... --}}
                     <a href="{{ route('login') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('login') ? 'bg-blue-800' : '' }}">Login</a>
                     @if (Route::has('register'))
                         <a href="{{ route('register') }}" class="text-gray-200 hover:text-white hover:bg-blue-600 block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('register') ? 'bg-blue-800' : '' }}">Register</a>
@@ -136,10 +154,9 @@
     </nav>
     {{-- FIN DE TU BARRA DE NAVEGACIÓN PERSONALIZADA --}}
 
-
     <!-- Page Content -->
     <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {{-- Session Messages (Opcional) --}}
+        {{-- Session Messages (Se mantienen, son útiles) --}}
         @if (session('success'))
             <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
                 <strong class="font-bold">¡Éxito!</strong>
@@ -159,23 +176,23 @@
             </div>
         @endif
 
-        {{-- Main Content Area --}}
+        {{-- ***** REVERTIDO: Vuelve a usar {{ $slot }} ***** --}}
         {{ $slot }}
 
     </main> {{-- Cierre del <main> principal --}}
 
-
     <!-- Footer -->
+    {{-- ... footer (sin cambios) ... --}}
     <footer class="bg-gray-600 text-gray-300 mt-auto">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm">
             &copy; {{ date('Y') }} SphereWork. Todos los derechos reservados.
         </div>
     </footer>
 
-    <!-- Page Specific Scripts -->
-    @stack('scripts')
+    {{-- Stacks eliminados --}}
+    {{-- @stack('scripts') --}}
 
-    {{-- Basic JS for Mobile Menu Toggle (Example) --}}
+    {{-- Basic JS for Mobile Menu Toggle (Example) - SIN CAMBIOS --}}
     <script>
         // Script para el menú móvil (sin cambios)
         const btn = document.querySelector('button[aria-controls="mobile-menu"]');

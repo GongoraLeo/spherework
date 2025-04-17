@@ -81,15 +81,10 @@
                                         <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">{{ $cliente->name }}</td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm">{{ $cliente->email }}</td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-center">
-                                            {{-- Enlace al perfil del cliente (¡OJO! Necesita una ruta específica) --}}
-                                            {{-- Asumiendo que tienes una ruta como 'admin.clientes.show' o similar --}}
-                                            {{-- Si usas ClientesController y la ruta 'clientes.show' apunta a él: --}}
-                                             @if(Route::has('clientes.show'))
-                                                <a href="{{ route('clientes.show', $cliente->id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Ver Perfil</a>
+                                            {{-- ***** CORREGIDO AQUÍ: Usa admin.clientes.show ***** --}}
+                                             @if(Route::has('admin.clientes.show'))
+                                                <a href="{{ route('admin.clientes.show', $cliente->id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Ver Perfil</a>
                                              @else
-                                                {{-- Si no, enlace al perfil genérico (menos útil para admin) --}}
-                                                {{-- <a href="#" class="text-gray-400">N/A</a> --}}
-                                                {{-- O mejor, crea la ruta/vista admin para ver perfil de cliente --}}
                                                 <span class="text-gray-400 text-xs">Ruta no def.</span>
                                              @endif
                                         </td>
@@ -104,7 +99,8 @@
                     </div>
                      {{-- Enlace a la gestión completa de clientes --}}
                      <div class="mt-4">
-                         <a href="{{ route('clientes.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                         {{-- ***** CORREGIDO AQUÍ: Usa admin.clientes.index ***** --}}
+                         <a href="{{ route('admin.clientes.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
                              Gestionar todos los clientes &rarr;
                          </a>
                      </div>

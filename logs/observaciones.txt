@@ -11,9 +11,9 @@ hay que revisar las relaciones entre tablas y si se necesita alguna mas para la 
 
 **seeders con datos para probarlo bien**
 
-hay que hacer back office para los empleados y los clientes
-pagina de cliente donde ver estadisticas
-pagina de empleado donde ver estadisticas de clientes
+**hay que hacer back office para los empleados y los clientes
+**pagina de cliente donde ver estadisticas
+**pagina de empleado donde ver estadisticas de clientes
 
 **carrito**
 
@@ -24,6 +24,11 @@ pagina de empleado donde ver estadisticas de clientes
 **dejar las paginas de auth sin heredar de la plantilla**
 
 **login y register adaptados al estilo**
+
+eliminar codigo inservible (empleados)
+comentar el código en español
+
+quitar el bton de editar pedidos para el usuario administrador
 
 scriptss y automatizaciones
 

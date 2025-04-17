@@ -7,7 +7,6 @@ use App\Http\Controllers\ComentariosController;
 use App\Http\Controllers\LibrosController;
 use App\Http\Controllers\DetallespedidosController;
 use App\Http\Controllers\PedidosController;
-use App\Http\Controllers\EmpleadosController;
 use App\Http\Controllers\EditorialesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminDashboardController;
@@ -17,147 +16,113 @@ use App\Http\Controllers\ProfileEntryController;
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Aquí es donde puedes registrar rutas web para tu aplicación. Estas
-| rutas son cargadas por RouteServiceProvider y todas ellas serán
-| asignadas al grupo de middleware "web". ¡Haz algo grandioso!
-|
 */
 
 // --- Rutas Públicas ---
 
-// Página principal (Catálogo de Libros)
 Route::get('/', [LibrosController::class, 'index'])->name('libros.index');
-// Ver detalles de un libro
 Route::get('/libros/{libros}', [LibrosController::class, 'show'])->name('libros.show');
 
-// Ver Autores (Opcional: podrían requerir auth si no son públicos)
-Route::get('/autores', [AutoresController::class, 'index'])->name('autores.index');
-Route::get('/autores/{autores}', [AutoresController::class, 'show'])->name('autores.show');
-
-// Ver Editoriales (Opcional: podrían requerir auth si no son públicos)
-Route::get('/editoriales', [EditorialesController::class, 'index'])->name('editoriales.index');
-Route::get('/editoriales/{editoriales}', [EditorialesController::class, 'show'])->name('editoriales.show');
+// Rutas públicas para Autores y Editoriales (si las necesitas separadas del admin)
+// Estas rutas NO deben requerir login/admin en el controlador si son públicas
+// Route::get('/autores', [AutoresController::class, 'index'])->name('public.autores.index'); // Renombrado si hay conflicto
+// Route::get('/autores/{autores}', [AutoresController::class, 'show'])->name('public.autores.show'); // Renombrado si hay conflicto
+// Route::get('/editoriales', [EditorialesController::class, 'index'])->name('public.editoriales.index'); // Renombrado si hay conflicto
+// Route::get('/editoriales/{editoriales}', [EditorialesController::class, 'show'])->name('public.editoriales.show'); // Renombrado si hay conflicto
 
 
 // --- Rutas Autenticadas ---
 
 Route::middleware('auth')->group(function () {
 
-    // Dashboard de Breeze (si lo usas)
     Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->middleware('verified')->name('dashboard'); // 'verified' si usas verificación de email
+        return redirect()->route('profile.entry');
+    })->middleware('verified')->name('dashboard');
 
-    // NUEVA RUTA DE ENTRADA AL PERFIL (para el enlace del menú)
     Route::get('/profile-entry', ProfileEntryController::class)->name('profile.entry');
 
-    // --- RUTAS DE ADMINISTRACIÓN ---
-    // Middleware adicional opcional para rol: ->middleware('role:administrador')
+    // --- RUTAS DE ADMINISTRACIÓN (URLs con /admin/) ---
+    // Aplicar middleware de admin aquí si no lo haces en el controlador
+    // Route::middleware('admin')->group(function() { // <-- Considera agrupar con middleware
 
-    // NUEVA RUTA PARA EL PANEL DE ADMIN
-    Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
-         ->name('admin.dashboard'); // Nombre de la ruta
-    
-    // Rutas para gestión de clientes por el admin
-    Route::get('/admin/clientes', [ClientesController::class, 'index'])->name('clientes.index');
-    Route::get('/admin/clientes/{cliente}', [ClientesController::class, 'show'])->name('clientes.show'); // {cliente} debe coincidir con el nombre del parámetro en el método show (User $cliente)
-    // Route::get('/admin/clientes/{cliente}/edit', [ClientesController::class, 'edit'])->name('clientes.edit');
-    // Route::put('/admin/clientes/{cliente}', [ClientesController::class, 'update'])->name('clientes.update');
-    // Route::delete('/admin/clientes/{cliente}', [ClientesController::class, 'destroy'])->name('clientes.destroy');
+        // PANEL DE ADMIN
+        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+             ->name('admin.dashboard');
+
+        // Gestión de clientes por el admin
+        Route::get('/admin/clientes', [ClientesController::class, 'index'])->name('admin.clientes.index'); // <-- Verificada
+        Route::get('/admin/clientes/{cliente}', [ClientesController::class, 'show'])->name('admin.clientes.show');
+        // Añade edit/update/destroy si los implementas, con nombre 'admin.clientes.*'
+
+        // Gestión de Autores (Admin)
+        Route::get('/admin/autores', [AutoresController::class, 'index'])->name('admin.autores.index');
+        Route::get('/admin/autores/create', [AutoresController::class, 'create'])->name('admin.autores.create'); // <-- Verificada (para el botón Crear)
+        Route::post('/admin/autores', [AutoresController::class, 'store'])->name('admin.autores.store');
+        Route::get('/admin/autores/{autores}', [AutoresController::class, 'show'])->name('admin.autores.show'); // <-- Ruta show para admin
+        Route::get('/admin/autores/{autores}/edit', [AutoresController::class, 'edit'])->name('admin.autores.edit');
+        Route::put('/admin/autores/{autores}', [AutoresController::class, 'update'])->name('admin.autores.update');
+        Route::delete('/admin/autores/{autores}', [AutoresController::class, 'destroy'])->name('admin.autores.destroy');
+
+        // Gestión de Editoriales (Admin)
+        Route::get('/admin/editoriales', [EditorialesController::class, 'index'])->name('admin.editoriales.index');
+        Route::get('/admin/editoriales/create', [EditorialesController::class, 'create'])->name('admin.editoriales.create');
+        Route::post('/admin/editoriales', [EditorialesController::class, 'store'])->name('admin.editoriales.store');
+        Route::get('/admin/editoriales/{editoriales}', [EditorialesController::class, 'show'])->name('admin.editoriales.show'); // <-- Verificada (para el botón Ver)
+        Route::get('/admin/editoriales/{editoriales}/edit', [EditorialesController::class, 'edit'])->name('admin.editoriales.edit');
+        Route::put('/admin/editoriales/{editoriales}', [EditorialesController::class, 'update'])->name('admin.editoriales.update');
+        Route::delete('/admin/editoriales/{editoriales}', [EditorialesController::class, 'destroy'])->name('admin.editoriales.destroy');
+
+    // }); // <-- Fin del grupo middleware admin (si lo usas)
+    // --- FIN RUTAS DE ADMINISTRACIÓN ---
 
 
+    // --- OTRAS RUTAS AUTENTICADAS (Sin /admin/ en URL) ---
 
-
-    // Perfil de Usuario (Breeze/Custom)
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show'); // Panel de usuario
+    // Perfil de Usuario (Cliente)
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update'); // La URL para actualizar puede seguir siendo /profile con PATCH
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy'); // La URL para borrar puede seguir siendo /profile con DELETE
-
-
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Carrito de Compras (Detallespedidos)
-    Route::get('/detallespedidos', [DetallespedidosController::class, 'index'])->name('detallespedidos.index'); // Ver carrito
-    Route::post('/detallespedidos', [DetallespedidosController::class, 'store'])->name('detallespedidos.store'); // Añadir item
-    Route::put('/detallespedidos/{detallespedidos}', [DetallespedidosController::class, 'update'])->name('detallespedidos.update'); // Actualizar cantidad
-    Route::delete('/detallespedidos/{detallespedidos}', [DetallespedidosController::class, 'destroy'])->name('detallespedidos.destroy'); // Eliminar item
-    // Nota: create, show, edit para detallespedidos no se usan en el flujo del carrito
+    Route::get('/detallespedidos', [DetallespedidosController::class, 'index'])->name('detallespedidos.index');
+    Route::post('/detallespedidos', [DetallespedidosController::class, 'store'])->name('detallespedidos.store');
+    Route::put('/detallespedidos/{detallespedidos}', [DetallespedidosController::class, 'update'])->name('detallespedidos.update');
+    Route::delete('/detallespedidos/{detallespedidos}', [DetallespedidosController::class, 'destroy'])->name('detallespedidos.destroy');
 
-    // Comentarios
-    Route::post('/comentarios', [ComentariosController::class, 'store'])->name('comentarios.store'); // Crear comentario
+    // Comentarios (Usuario/Admin)
+    Route::post('/comentarios', [ComentariosController::class, 'store'])->name('comentarios.store');
     Route::get('/comentarios/{comentarios}/edit', [ComentariosController::class, 'edit'])->name('comentarios.edit');
     Route::match(['put', 'patch'], '/comentarios/{comentarios}', [ComentariosController::class, 'update'])->name('comentarios.update');
+    Route::delete('/comentarios/{comentarios}', [ComentariosController::class, 'destroy'])->name('comentarios.destroy');
+    // Si necesitas una lista separada para admin:
+    // Route::get('/admin/comentarios', [ComentariosController::class, 'indexAdmin'])->name('admin.comentarios.index');
 
-    Route::delete('/comentarios/{comentarios}', [ComentariosController::class, 'destroy'])->name('comentarios.destroy'); // Eliminar (si se permite)
-    // Nota: index, create, show, edit para comentarios podrían ser solo para admin
+    // Proceso de Checkout y Pedidos (Usuario/Admin)
+    Route::post('/checkout/process', [PedidosController::class, 'processCheckout'])->name('checkout.process');
+    Route::get('/checkout/success/{pedidos}', [PedidosController::class, 'showSuccess'])->name('checkout.success');
+    // Rutas CRUD para Pedidos
+    Route::get('/pedidos', [PedidosController::class, 'index'])->name('pedidos.index'); // Controlador filtra por rol
+    Route::get('/pedidos/create', [PedidosController::class, 'create'])->name('pedidos.create'); // No usado?
+    Route::post('/pedidos', [PedidosController::class, 'store'])->name('pedidos.store'); // No usado?
+    Route::get('/pedidos/{pedidos}', [PedidosController::class, 'show'])->name('pedidos.show'); // Controlador verifica permiso
+    Route::get('/pedidos/{pedidos}/edit', [PedidosController::class, 'edit'])->name('pedidos.edit'); // Controlador verifica admin
+    Route::put('/pedidos/{pedidos}', [PedidosController::class, 'update'])->name('pedidos.update'); // Controlador verifica admin
+    Route::delete('/pedidos/{pedidos}', [PedidosController::class, 'destroy'])->name('pedidos.destroy'); // Controlador verifica admin
+    // **NOTA:** El error "View [pedidos.index] not found" indica que falta el archivo de vista. Debes crearlo.
 
-    // Proceso de Checkout
-    Route::post('/pedidos/checkout', [PedidosController::class, 'processCheckout'])->name('pedidos.checkout.process');
-    Route::get('/pedidos/{pedido}/success', [PedidosController::class, 'showSuccess'])->name('pedidos.checkout.success');
-
-
-    // --- Rutas de Administración (Requieren Auth, Controladores deben verificar Rol 'administrador') ---
-
-    // Gestión de Libros
+    // ***** GESTIÓN DE LIBROS (Admin/Permisos en Controlador) *****
+    // Rutas CRUD para libros, accesibles fuera de /admin/
+    // El controlador LibrosController debe verificar si el usuario es admin para create/store/edit/update/destroy
     Route::get('/libros/create', [LibrosController::class, 'create'])->name('libros.create');
-    Route::post('/libros', [LibrosController::class, 'store'])->name('libros.store'); // POST para crear
+    Route::post('/libros', [LibrosController::class, 'store'])->name('libros.store');
     Route::get('/libros/{libros}/edit', [LibrosController::class, 'edit'])->name('libros.edit');
-    Route::put('/libros/{libros}', [LibrosController::class, 'update'])->name('libros.update'); // PUT para actualizar
+    Route::put('/libros/{libros}', [LibrosController::class, 'update'])->name('libros.update');
     Route::delete('/libros/{libros}', [LibrosController::class, 'destroy'])->name('libros.destroy');
 
-    // Gestión de Autores
-    Route::get('/autores/create', [AutoresController::class, 'create'])->name('autores.create');
-    Route::post('/autores', [AutoresController::class, 'store'])->name('autores.store');
-    Route::get('/autores/{autores}/edit', [AutoresController::class, 'edit'])->name('autores.edit');
-    Route::put('/autores/{autores}', [AutoresController::class, 'update'])->name('autores.update');
-    Route::delete('/autores/{autores}', [AutoresController::class, 'destroy'])->name('autores.destroy');
-
-    // Gestión de Editoriales
-    Route::get('/editoriales/create', [EditorialesController::class, 'create'])->name('editoriales.create');
-    Route::post('/editoriales', [EditorialesController::class, 'store'])->name('editoriales.store');
-    Route::get('/editoriales/{editoriales}/edit', [EditorialesController::class, 'edit'])->name('editoriales.edit');
-    Route::put('/editoriales/{editoriales}', [EditorialesController::class, 'update'])->name('editoriales.update');
-    Route::delete('/editoriales/{editoriales}', [EditorialesController::class, 'destroy'])->name('editoriales.destroy');
-
-    // Gestión de Pedidos (Vista Admin)
-    Route::get('/pedidos', [PedidosController::class, 'index'])->name('pedidos.index'); // Listar todos los pedidos
-    Route::get('/pedidos/create', [PedidosController::class, 'create'])->name('pedidos.create'); // Crear pedido manualmente?
-    Route::post('/pedidos', [PedidosController::class, 'store'])->name('pedidos.store'); // Guardar pedido manual?
-    Route::get('/pedidos/{pedidos}', [PedidosController::class, 'show'])->name('pedidos.show'); // Ver detalle de un pedido (admin)
-    Route::get('/pedidos/{pedidos}/edit', [PedidosController::class, 'edit'])->name('pedidos.edit'); // Editar estado/etc.
-    Route::put('/pedidos/{pedidos}', [PedidosController::class, 'update'])->name('pedidos.update'); // Actualizar pedido
-    Route::delete('/pedidos/{pedidos}', [PedidosController::class, 'destroy'])->name('pedidos.destroy'); // Eliminar pedido
-
-    // // Gestión de Clientes (Vista Admin - Usuarios con rol 'cliente')
-    // // Asumiendo que ClientesController gestiona Users con rol cliente
-    // Route::get('/clientes', [ClientesController::class, 'index'])->name('clientes.index');
-    // Route::get('/clientes/create', [ClientesController::class, 'create'])->name('clientes.create');
-    // Route::post('/clientes', [ClientesController::class, 'store'])->name('clientes.store');
-    // Route::get('/clientes/{clientes}', [ClientesController::class, 'show'])->name('clientes.show'); // Usar {user} o {cliente}? Depende del modelo/param
-    // Route::get('/clientes/{clientes}/edit', [ClientesController::class, 'edit'])->name('clientes.edit');
-    // Route::put('/clientes/{clientes}', [ClientesController::class, 'update'])->name('clientes.update');
-    // Route::delete('/clientes/{clientes}', [ClientesController::class, 'destroy'])->name('clientes.destroy');
-
-    // Gestión de Empleados (Vista Admin - Usuarios con rol 'admin'/'gestor')
-    // Asumiendo que EmpleadosController gestiona Users con esos roles
-    Route::get('/empleados', [EmpleadosController::class, 'index'])->name('empleados.index');
-    Route::get('/empleados/create', [EmpleadosController::class, 'create'])->name('empleados.create');
-    Route::post('/empleados', [EmpleadosController::class, 'store'])->name('empleados.store');
-    Route::get('/empleados/{empleados}', [EmpleadosController::class, 'show'])->name('empleados.show'); // Usar {user} o {empleado}?
-    Route::get('/empleados/{empleados}/edit', [EmpleadosController::class, 'edit'])->name('empleados.edit');
-    Route::put('/empleados/{empleados}', [EmpleadosController::class, 'update'])->name('empleados.update');
-    Route::delete('/empleados/{empleados}', [EmpleadosController::class, 'destroy'])->name('empleados.destroy');
-
-    // Gestión de Comentarios (Vista Admin - Opcional)
-    Route::get('/comentarios', [ComentariosController::class, 'index'])->name('comentarios.index'); // Listar todos
-    Route::get('/comentarios/{comentarios}', [ComentariosController::class, 'show'])->name('comentarios.show'); // Ver detalle (admin)
-    Route::get('/comentarios/{comentarios}/edit', [ComentariosController::class, 'edit'])->name('comentarios.edit'); // Editar (admin)
-    // DELETE y PUT ya están definidos arriba para el usuario, el controlador debe diferenciar permisos
 
 }); // Fin del grupo middleware('auth')
 
 
 // --- Rutas de Autenticación (Breeze) ---
 require __DIR__.'/auth.php';
-
