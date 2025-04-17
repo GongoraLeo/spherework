@@ -25,10 +25,12 @@ hay que revisar las relaciones entre tablas y si se necesita alguna mas para la 
 
 **login y register adaptados al estilo**
 
-eliminar codigo inservible (empleados)
+**eliminar codigo inservible (empleados)
 comentar el código en español
 
-quitar el bton de editar pedidos para el usuario administrador
+**quitar el bton de editar pedidos para el usuario administrador
+
+corregir readme.md 
 
 scriptss y automatizaciones
 
