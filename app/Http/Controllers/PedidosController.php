@@ -1,81 +1,122 @@
 <?php
-// filepath: c:\xampp\htdocs\spherework\app\Http\Controllers\PedidosController.php
+// filepath: app/Http/Controllers/PedidosController.php
 
 namespace App\Http\Controllers;
 
-use App\Models\Pedidos;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Log;
-use Illuminate\View\View;
-use Illuminate\Support\Facades\DB; // Para transacciones (opcional)
-use Illuminate\Validation\Rule;     // Para validación de status
+use App\Models\Pedidos; // Modelo Eloquent para interactuar con la tabla 'pedidos'.
+use Illuminate\Http\Request; // Objeto para manejar las solicitudes HTTP entrantes.
+use Illuminate\Support\Facades\Auth; // Fachada para verificar autenticación y obtener usuario/rol.
+use Illuminate\Http\RedirectResponse; // Para especificar el tipo de retorno de redirecciones.
+use Illuminate\Support\Facades\Log;    // Fachada para registrar mensajes de error o información.
+use Illuminate\View\View;             // Para especificar el tipo de retorno de vistas.
+use Illuminate\Support\Facades\DB;    // Fachada DB, usada aquí para transacciones en el checkout.
+use Illuminate\Validation\Rule;     // Clase para construir reglas de validación, usada para el campo 'status'.
+use App\Models\User; // Necesario para la posible carga de clientes en create() (actualmente comentado).
+use App\Models\Detallespedidos; // Necesario para la relación en processCheckout() y show().
 
+/**
+ * Class PedidosController
+ *
+ * Gestiona las operaciones relacionadas con los pedidos. Incluye funcionalidades
+ * para administradores (listar, crear, editar, actualizar, eliminar pedidos) y
+ * para clientes (ver detalles de sus pedidos, procesar checkout, ver confirmación).
+ *
+ * @package App\Http\Controllers
+ */
 class PedidosController extends Controller
 {
     /**
-     * Display a listing of the resource (For Admin).
-     * Muestra una lista de todos los pedidos (generalmente para administradores).
+     * Muestra una lista paginada de todos los pedidos.
      *
-     * @return \Illuminate\View\View
+     * Esta acción está pensada principalmente para administradores.
+     * Recupera todos los pedidos, carga la relación 'cliente' para mostrar el nombre,
+     * los ordena por fecha de pedido descendente y los pagina.
+     *
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista 'pedidos.index' o redirige si no es admin (implícito).
      */
-    public function index(): View
+    public function index(): View|RedirectResponse // Modificado para incluir RedirectResponse por la autorización
     {
-        // Autorización: Solo para administradores
+        // 1. Autorización: Verificar si el usuario autenticado es un administrador.
+        // Se comprueba el rol del usuario logueado.
         if (!Auth::check() || Auth::user()->rol !== 'administrador') {
-            // O abort(403);
+            // Si no es admin, redirige a la entrada del perfil con un mensaje de error.
+            // Se podría usar abort(403) si se prefiere detener la ejecución.
+             return redirect()->route('profile.entry')->with('error', 'Acceso no autorizado para ver todos los pedidos.');
         }
 
-        // Cargar pedidos con relaciones para evitar N+1
-        $pedidos = Pedidos::with('cliente')->latest('fecha_pedido')->paginate(20); // O get()
-        return view('pedidos.index', compact('pedidos')); // Asume que existe la vista pedidos.index
+        // 2. Obtención de Datos: Recuperar todos los pedidos con información del cliente.
+        // `with('cliente')` realiza Eager Loading de la relación 'cliente' definida en el modelo Pedidos.
+        // `latest('fecha_pedido')` ordena los pedidos por la columna 'fecha_pedido' de más reciente a más antiguo.
+        // `paginate(20)` divide los resultados en páginas de 20 pedidos.
+        $pedidos = Pedidos::with('cliente')->latest('fecha_pedido')->paginate(20);
+
+        // 3. Retornar la Vista: Mostrar la lista de pedidos.
+        // Renderiza la vista 'resources/views/pedidos/index.blade.php'.
+        // Pasa la colección paginada de pedidos a la vista.
+        return view('pedidos.index', compact('pedidos'));
     }
 
     /**
-     * Show the form for creating a new resource (For Admin).
-     * Muestra el formulario para crear un pedido manualmente (admin).
+     * Muestra el formulario para crear un nuevo pedido manualmente (por un administrador).
      *
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     * Restringido a administradores. Actualmente solo muestra la vista del formulario.
+     * Podría extenderse para pasar una lista de clientes si el admin necesita seleccionarlo.
+     *
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista 'pedidos.create' o redirige si no es admin.
      */
     public function create(): View|RedirectResponse
     {
-        // Autorización: Solo para administradores
+        // 1. Autorización: Solo administradores pueden acceder a este formulario.
         if (Auth::user()->rol !== 'administrador') {
+            // Redirige al índice de pedidos (admin) si no tiene permiso.
             return redirect()->route('pedidos.index')->with('error', 'Acceso no autorizado.');
         }
-        // Necesitarías pasar lista de clientes (Users) si el admin lo selecciona
+
+        // 2. Preparación de Datos (Opcional):
+        // Si el formulario necesitara una lista de clientes para seleccionar:
         // $clientes = \App\Models\User::where('rol', 'cliente')->orderBy('name')->get();
         // return view('pedidos.create', compact('clientes'));
-        return view('pedidos.create'); // Asume que existe la vista pedidos.create
+
+        // 3. Retornar la Vista del Formulario:
+        // Renderiza 'resources/views/pedidos.create.blade.php'.
+        return view('pedidos.create');
     }
 
     /**
-     * Store a newly created resource in storage (For Admin).
-     * Guarda un pedido creado manualmente (admin).
+     * Almacena un nuevo pedido creado manualmente en la base de datos (por un administrador).
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * Restringido a administradores. Valida los datos recibidos del formulario
+     * (cliente existente, estado válido, total y fecha opcionales).
+     * Crea el registro del pedido y redirige al índice de pedidos.
+     *
+     * @param  \Illuminate\Http\Request  $request Datos del formulario de creación manual.
+     * @return \Illuminate\Http\RedirectResponse Redirige al índice de pedidos o de vuelta si hay error.
      */
     public function store(Request $request): RedirectResponse
     {
-        // Autorización: Solo para administradores
+        // 1. Autorización: Solo administradores pueden crear pedidos manualmente.
         if (Auth::user()->rol !== 'administrador') {
              abort(403, 'Acción no autorizada.');
         }
 
+        // 2. Validación de Datos:
         $request->validate([
-            'cliente_id' => 'required|exists:users,id', // Asegura que el cliente exista
-            'status' => ['required', Rule::in(array_keys(self::getStatusMap()))], // Valida contra estados definidos
-            'total' => 'nullable|numeric|min:0', // Total podría ser opcional o calculado después
-            'fecha_pedido' => 'nullable|date', // Fecha podría ser opcional
+            'cliente_id' => 'required|exists:users,id', // El cliente seleccionado debe existir en la tabla 'users'.
+            // El estado debe ser uno de los valores válidos definidos en el helper getStatusMap().
+            'status' => ['required', Rule::in(array_keys(self::getStatusMap()))],
+            'total' => 'nullable|numeric|min:0', // El total es opcional y debe ser numérico no negativo.
+            'fecha_pedido' => 'nullable|date', // La fecha es opcional y debe tener formato de fecha válido.
         ]);
 
+        // 3. Creación del Pedido:
         try {
-            Pedidos::create($request->all()); // Crea el pedido con los datos validados
+            // Utiliza el método estático `create` del modelo Pedidos con los datos validados.
+            Pedidos::create($request->all());
+            // 4. Redirección Éxito:
             return redirect()->route('pedidos.index')
                 ->with('success', 'Pedido creado correctamente.');
         } catch (\Exception $e) {
+            // 5. Manejo de Errores:
             Log::error("Error al crear pedido manual: " . $e->getMessage(), $request->all());
             return back()->with('error', 'Ocurrió un error al crear el pedido.')->withInput();
         }
@@ -83,86 +124,111 @@ class PedidosController extends Controller
 
 
     /**
-     * Display the specified resource.
-     * Muestra los detalles de un pedido específico (para usuario o admin).
+     * Muestra los detalles de un pedido específico.
      *
-     * @param  \App\Models\Pedidos $pedido // Route Model Binding
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     * Accesible por el cliente propietario del pedido o por cualquier administrador.
+     * Utiliza Route Model Binding para obtener la instancia del pedido.
+     * Carga las relaciones 'cliente' y 'detallespedido' (con sus libros asociados)
+     * para mostrar toda la información relevante.
+     *
+     * @param  \App\Models\Pedidos $pedido Instancia del modelo Pedidos inyectada por Laravel.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista 'pedidos.show' o redirige si no está autorizado.
      */
     public function show(Pedidos $pedido): View|RedirectResponse
     {
-        // 1. Autorización: Verificar que el usuario autenticado sea el dueño del pedido O un administrador.
+        // 1. Autorización: Verificar si el usuario autenticado es el dueño o un administrador.
         $user = Auth::user();
 
-        // **IMPORTANTE**: Asegúrate que $pedido->cliente_id TENGA un valor válido en la BD.
-        // Si $pedido->cliente_id es NULL, esta condición fallará para el cliente.
+        // Comprueba si el ID del usuario logueado NO coincide con el cliente_id del pedido
+        // Y TAMPOCO el usuario logueado es administrador.
+        // Nota: Es crucial que $pedido->cliente_id no sea null para que la comparación funcione para el cliente.
         if ($user->id !== $pedido->cliente_id && $user->rol !== 'administrador') {
-            // Si no es el dueño ni admin, redirigir.
+            // Si no cumple ninguna condición, redirige al perfil del usuario con un error.
             return redirect()->route('profile.show')->with('error', 'No tienes permiso para ver este pedido.');
         }
 
-        // 2. Eager Loading: Cargar relaciones necesarias.
+        // 2. Carga de Relaciones (Eager Loading):
+        // `load()` carga las relaciones en el modelo $pedido ya existente.
+        // Carga la relación 'cliente' (para mostrar datos del cliente).
+        // Carga la relación 'detallespedido' y, anidadamente, la relación 'libro' de cada detalle.
         $pedido->load(['cliente', 'detallespedido.libro']);
 
-        // 3. Retornar la vista con los datos del pedido.
+        // 3. Retornar la Vista de Detalles:
+        // Renderiza 'resources/views/pedidos/show.blade.php'.
+        // Pasa la instancia del pedido `$pedido` (con relaciones cargadas) a la vista.
         return view('pedidos.show', compact('pedido'));
     }
 
 
     /**
-     * Show the form for editing the specified resource (For Admin).
-     * Muestra el formulario para editar un pedido (admin).
+     * Muestra el formulario para editar un pedido existente (por un administrador).
      *
-     * @param  \App\Models\Pedidos $pedidos // Mantenido plural por ruta {pedidos}
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     * Restringido a administradores. Utiliza Route Model Binding.
+     * Obtiene el mapa de estados válidos para pasarlo a la vista (para un select).
+     *
+     * @param  \App\Models\Pedidos $pedidos Instancia del pedido a editar (Route Model Binding).
+     *                                     Se mantiene el nombre plural `$pedidos`.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista 'pedidos.edit' o redirige si no es admin.
      */
-    public function edit(Pedidos $pedidos): View|RedirectResponse // Mantenido plural por ruta {pedidos}
+    public function edit(Pedidos $pedidos): View|RedirectResponse
     {
-        // Autorización: Solo para administradores
+        // 1. Autorización: Solo administradores pueden editar.
         if (Auth::user()->rol !== 'administrador') {
              return redirect()->route('pedidos.index')->with('error', 'Acceso no autorizado.');
         }
 
-        // No necesitas find(), Route Model Binding ya inyectó el modelo en $pedidos
-        // $pedidos = Pedidos::find($pedidos->id); // REDUNDANTE
-
-        // Pasar los estados posibles a la vista para un select
+        // 2. Obtener Datos para Select: Recuperar los posibles estados.
+        // Llama al método helper privado para obtener el array [código_estado => nombre_estado].
         $statuses = self::getStatusMap();
 
-        return view('pedidos.edit', compact('pedidos', 'statuses')); // Asume que existe la vista pedidos.edit
+        // 3. Retornar la Vista del Formulario de Edición:
+        // Renderiza 'resources/views/pedidos.edit.blade.php'.
+        // Pasa el pedido a editar (`$pedidos`) y el array de estados (`$statuses`).
+        return view('pedidos.edit', compact('pedidos', 'statuses'));
     }
 
     /**
-     * Update the specified resource in storage (For Admin).
-     * Actualiza un pedido (admin).
+     * Actualiza un pedido existente en la base de datos (por un administrador).
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Pedidos $pedidos // Mantenido plural por ruta {pedidos}
-     * @return \Illuminate\Http\RedirectResponse
+     * Restringido a administradores. Valida los datos recibidos (estado válido,
+     * total y fecha opcionales). Actualiza solo los campos permitidos del pedido.
+     * Redirige al índice de pedidos.
+     *
+     * @param  \Illuminate\Http\Request  $request Datos del formulario de edición.
+     * @param  \App\Models\Pedidos $pedidos Instancia del pedido a actualizar (Route Model Binding).
+     *                                     Se mantiene el nombre plural `$pedidos`.
+     * @return \Illuminate\Http\RedirectResponse Redirige al índice de pedidos o de vuelta si hay error.
      */
-    public function update(Request $request, Pedidos $pedidos): RedirectResponse // Mantenido plural por ruta {pedidos}
+    public function update(Request $request, Pedidos $pedidos): RedirectResponse
     {
-        // Autorización: Solo para administradores
+        // 1. Autorización: Solo administradores pueden actualizar.
         if (Auth::user()->rol !== 'administrador') {
              abort(403, 'Acción no autorizada.');
         }
 
+        // 2. Validación de Datos:
         $request->validate([
-            // No permitir cambiar cliente_id en update
+            // El estado debe ser uno de los valores válidos definidos en getStatusMap().
             'status' => ['required', Rule::in(array_keys(self::getStatusMap()))],
-            'total' => 'nullable|numeric|min:0', // Permitir actualizar total si es necesario
-            'fecha_pedido' => 'nullable|date', // Permitir actualizar fecha si es necesario
+            'total' => 'nullable|numeric|min:0', // Permite actualizar el total si es necesario.
+            'fecha_pedido' => 'nullable|date', // Permite actualizar la fecha si es necesario.
+            // Nota: No se valida ni permite actualizar 'cliente_id' aquí por seguridad/lógica.
         ]);
 
-        // No necesitas find(), Route Model Binding ya inyectó el modelo en $pedidos
-        // $pedidos = Pedidos::find($pedidos->id); // REDUNDANTE
-
+        // 3. Actualización del Pedido:
         try {
-            // Actualizar solo los campos permitidos
+            // Se utiliza el método `update()` sobre la instancia `$pedidos`.
+            // `request->only()` asegura que solo se intenten actualizar los campos especificados,
+            // incluso si se envían otros campos en la solicitud.
             $pedidos->update($request->only(['status', 'total', 'fecha_pedido']));
-            return redirect()->route('pedidos.index') // O a pedidos.show
+
+            // 4. Redirección Éxito:
+            // Redirige al índice de pedidos del admin con mensaje de éxito.
+            // Alternativa: redirigir a la vista show del pedido actualizado: route('pedidos.show', $pedidos).
+            return redirect()->route('pedidos.index')
                 ->with('success', 'Pedido actualizado correctamente.');
         } catch (\Exception $e) {
+            // 5. Manejo de Errores:
              Log::error("Error al actualizar pedido ID {$pedidos->id}: " . $e->getMessage(), $request->all());
              return back()->with('error', 'Ocurrió un error al actualizar el pedido.')->withInput();
         }
@@ -170,94 +236,150 @@ class PedidosController extends Controller
 
 
     /**
-     * Procesa el checkout del pedido pendiente del usuario.
+     * Procesa el checkout del pedido pendiente del usuario actual.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * Busca el pedido pendiente del usuario, verifica que no esté vacío,
+     * calcula el total final basado en los detalles, actualiza el estado del pedido
+     * (a 'completado' o 'procesando'), asigna el total y la fecha.
+     * Utiliza una transacción de base de datos para asegurar la atomicidad de la operación.
+     * Si todo es correcto, confirma la transacción y redirige a una página de éxito.
+     * Maneja errores como pedido no encontrado, carrito vacío u otros problemas.
+     *
+     * @param  \Illuminate\Http\Request  $request (No se usa directamente, pero es estándar).
+     * @return \Illuminate\Http\RedirectResponse Redirige a la página de éxito o de vuelta con error.
      */
     public function processCheckout(Request $request): RedirectResponse
     {
+        // 1. Obtener Usuario Autenticado:
         $user = Auth::user();
+        // Asegurarse de que el usuario está autenticado (aunque las rutas suelen proteger esto).
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Debes iniciar sesión para finalizar la compra.');
+        }
 
-        // Usar transacción para asegurar atomicidad
+        // 2. Iniciar Transacción de Base de Datos:
+        // `DB::beginTransaction()` asegura que todas las operaciones de BD dentro del try
+        // se completen exitosamente o se reviertan todas juntas si ocurre un error.
         DB::beginTransaction();
 
         try {
-            // Encontrar el pedido PENDIENTE del usuario (con bloqueo para evitar concurrencia si es necesario)
+            // 3. Encontrar el Pedido Pendiente del Usuario:
+            // Busca el pedido pendiente asociado al usuario.
             $pedidoPendiente = Pedidos::where('cliente_id', $user->id)
                 ->where('status', Pedidos::STATUS_PENDIENTE)
-                ->with('detallespedido') // Cargar detalles para calcular total
-                // ->lockForUpdate() // Opcional: Bloquear fila durante la transacción
-                ->firstOrFail(); // Falla si no existe
+                ->with('detallespedido') // Carga los detalles para verificar si está vacío y calcular total.
+                // ->lockForUpdate() // Opcional: Bloquea la fila del pedido para evitar modificaciones concurrentes durante la transacción. Útil en sistemas de alta concurrencia.
+                ->firstOrFail(); // Lanza ModelNotFoundException si no se encuentra ningún pedido pendiente.
 
-            // Verificar que el carrito no esté vacío
+            // 4. Verificar si el Carrito (Pedido Pendiente) está Vacío:
+            // Se accede a la relación 'detallespedido' cargada previamente.
             if ($pedidoPendiente->detallespedido->isEmpty()) {
-                 DB::rollBack(); // Revertir transacción si está vacía
+                 DB::rollBack(); // Revertir la transacción si el carrito está vacío.
+                // Redirige al índice del carrito con un error.
                 return redirect()->route('detallespedido.index')->with('error', 'Tu carrito está vacío.');
             }
 
-            // Calcular el total final desde los detalles
+            // 5. Calcular el Total Final:
+            // Suma los subtotales (cantidad * precio) de cada detalle del pedido.
             $totalFinal = $pedidoPendiente->detallespedido->sum(function ($detalle) {
                 return $detalle->cantidad * $detalle->precio;
             });
 
-            // Actualizar el pedido
-            $pedidoPendiente->status = Pedidos::STATUS_COMPLETADO; // O PROCESANDO
+            // 6. Actualizar el Pedido:
+            // Cambia el estado del pedido a 'completado' (o 'procesando' si hay pasos intermedios).
+            $pedidoPendiente->status = Pedidos::STATUS_COMPLETADO;
+            // Asigna el total calculado.
             $pedidoPendiente->total = $totalFinal;
-            $pedidoPendiente->fecha_pedido = now(); // Establecer fecha/hora de completado
+            // Establece la fecha/hora actual como fecha del pedido completado.
+            $pedidoPendiente->fecha_pedido = now();
+            // Guarda los cambios en la base de datos.
             $pedidoPendiente->save();
 
-            // --- (Lógica de Pago iría aquí) ---
-            // Si el pago falla: throw new \Exception('Pago fallido');
+            // --- Punto de Integración con Pasarela de Pago ---
+            // Aquí iría la lógica para procesar el pago.
+            // Si el pago falla, se debería lanzar una excepción para activar el DB::rollBack().
+            // Ejemplo:
+            // $paymentSuccess = PaymentGateway::process($pedidoPendiente, $request->payment_details);
+            // if (!$paymentSuccess) {
+            //     throw new \Exception('El pago falló.');
+            // }
+            // --- Fin Lógica de Pago ---
 
-            // Confirmar transacción
+            // 7. Confirmar Transacción:
+            // Si todas las operaciones (actualización de pedido, pago) fueron exitosas,
+            // `DB::commit()` hace permanentes los cambios en la base de datos.
             DB::commit();
 
-            // Redirigir a página de éxito
-            return redirect()->route('pedidos.checkout.success', ['pedido' => $pedidoPendiente->id])
+            // 8. Redirección Éxito:
+            // Redirige a la ruta de confirmación de éxito, pasando el ID del pedido procesado.
+            // Se usa el nombre de ruta 'checkout.success' definido en web.php.
+            return redirect()->route('checkout.success', ['pedido' => $pedidoPendiente->id])
                 ->with('success', '¡Tu pedido ha sido realizado con éxito!');
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            DB::rollBack(); // Revertir si no se encontró pedido
+            // 9. Manejo de Error: Pedido Pendiente No Encontrado.
+            DB::rollBack(); // Revertir la transacción.
+            // Redirige al carrito con un mensaje específico.
             return redirect()->route('detallespedido.index')->with('error', 'No se encontró un pedido pendiente.');
         } catch (\Exception $e) {
-            DB::rollBack(); // Revertir en cualquier otro error
+            // 10. Manejo de Error Genérico (Incluye posible fallo de pago):
+            DB::rollBack(); // Revertir la transacción en cualquier otro error.
+            // Registra el error detallado.
             Log::error("Error en checkout para user {$user->id}: " . $e->getMessage());
+            // Redirige al carrito con un mensaje genérico.
             return redirect()->route('detallespedido.index')->with('error', 'Ocurrió un error al procesar tu pedido. Inténtalo de nuevo.');
         }
     }
 
     /**
-     * Muestra la página de confirmación del pedido.
+     * Muestra la página de confirmación después de un checkout exitoso.
      *
-     * @param  \App\Models\Pedidos $pedido
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     * Utiliza Route Model Binding para obtener la instancia del pedido.
+     * Verifica que el usuario autenticado sea el propietario del pedido y que
+     * el pedido no esté en estado 'pendiente'. Carga los detalles y libros
+     * asociados para mostrar un resumen del pedido realizado.
+     *
+     * @param  \App\Models\Pedidos $pedido Instancia del pedido cuya confirmación se mostrará.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista 'pedidos.success' o redirige si no está autorizado/listo.
      */
     public function showSuccess(Pedidos $pedido): View|RedirectResponse
     {
-        // Autorización: Asegurarse que el usuario autenticado es el dueño
+        // 1. Autorización: Asegurarse que el usuario autenticado es el dueño del pedido.
         if ($pedido->cliente_id !== Auth::id()) {
+            // Detiene la ejecución si no es el dueño.
             abort(403, 'No tienes permiso para ver esta confirmación.');
         }
 
-        // Asegurarse que el pedido esté al menos completado (o estado posterior)
+        // 2. Verificación de Estado: Asegurarse que el pedido ya no está pendiente.
+        // Previene que se acceda a la página de éxito de un pedido que no se completó.
         if ($pedido->status === Pedidos::STATUS_PENDIENTE) {
+             // Redirige al perfil del usuario con un error si el pedido aún está pendiente.
              return redirect()->route('profile.show')->with('error', 'Este pedido aún no ha sido completado.');
         }
 
-        // Cargar detalles y libros para mostrar resumen
+        // 3. Carga de Relaciones: Cargar detalles y libros para mostrar el resumen.
+        // `load()` carga las relaciones en el modelo $pedido ya existente.
         $pedido->load('detallespedido.libro');
 
-        return view('pedidos.success', compact('pedido')); // Asume que existe la vista pedidos.success
+        // 4. Retornar la Vista de Éxito:
+        // Renderiza 'resources/views/pedidos.success.blade.php'.
+        // Pasa la instancia del pedido `$pedido` (con relaciones cargadas) a la vista.
+        return view('pedidos.success', compact('pedido'));
     }
 
     /**
-     * Helper para obtener los estados válidos y sus nombres.
+     * Método helper privado para obtener un mapa de los estados de pedido válidos.
      *
-     * @return array<string, string>
+     * Devuelve un array asociativo donde las claves son las constantes de estado
+     * (ej. 'pendiente') y los valores son sus representaciones legibles (ej. 'Pendiente').
+     * Útil para validación y para mostrar opciones en formularios (como en `edit`).
+     * Es `private static` porque no depende del estado de una instancia y solo se usa internamente.
+     *
+     * @return array<string, string> Mapa de código de estado a nombre legible.
      */
     private static function getStatusMap(): array
     {
+        // Define los estados usando las constantes del modelo Pedidos para mantenibilidad.
         return [
             Pedidos::STATUS_PENDIENTE => 'Pendiente',
             Pedidos::STATUS_PROCESANDO => 'Procesando',
@@ -270,35 +392,41 @@ class PedidosController extends Controller
 
 
     /**
-     * Remove the specified resource from storage (For Admin).
-     * Elimina un pedido (admin).
+     * Elimina un pedido específico de la base de datos (acción de administrador).
      *
-     * @param  \App\Models\Pedidos $pedidos // Mantenido plural por ruta {pedidos}
-     * @return \Illuminate\Http\RedirectResponse
+     * Restringido a administradores. Utiliza Route Model Binding.
+     * Intenta eliminar el pedido. Maneja posibles errores, incluyendo restricciones
+     * de base de datos (si los detalles no se borran en cascada).
+     *
+     * @param  \App\Models\Pedidos $pedidos Instancia del pedido a eliminar (Route Model Binding).
+     *                                     Se mantiene el nombre plural `$pedidos`.
+     * @return \Illuminate\Http\RedirectResponse Redirige al índice de pedidos con mensaje de éxito o error.
      */
-    public function destroy(Pedidos $pedidos): RedirectResponse // Mantenido plural por ruta {pedidos}
+    public function destroy(Pedidos $pedidos): RedirectResponse
     {
-        // Autorización: Solo para administradores
+        // 1. Autorización: Solo administradores pueden eliminar pedidos.
         if (Auth::user()->rol !== 'administrador') {
              abort(403, 'Acción no autorizada.');
         }
 
-        // No necesitas find(), Route Model Binding ya inyectó el modelo en $pedidos
-        // $pedidos = Pedidos::find($pedidos->id); // REDUNDANTE
-
+        // 2. Intento de Eliminación:
         try {
-            // Considerar qué pasa con los detalles del pedido. ¿Borrado en cascada?
-            // Si no hay borrado en cascada, eliminarlos primero o manejar la restricción.
-            // $pedidos->detallespedido()->delete(); // Si es necesario
+            
+            // Llama al método `delete()` sobre la instancia `$pedidos`.
             $pedidos->delete();
+
+            // 3. Redirección Éxito:
             return redirect()->route('pedidos.index')
                 ->with('success', 'Pedido eliminado correctamente.');
+
         } catch (\Illuminate\Database\QueryException $e) {
-             // Capturar error si hay restricciones (ej. si detalles no se borran)
+             // 4. Manejo de Error Específico (Restricción de BD):
+             // Captura errores de BD, típicamente por restricciones de clave foránea.
              Log::error("Error de BD al eliminar pedido ID {$pedidos->id}: " . $e->getMessage());
              return redirect()->route('pedidos.index')
-                ->with('error', 'No se pudo eliminar el pedido debido a restricciones.');
+                ->with('error', 'No se pudo eliminar el pedido debido a restricciones (posiblemente detalles asociados).');
         } catch (\Exception $e) {
+             // 5. Manejo de Error Genérico:
              Log::error("Error al eliminar pedido ID {$pedidos->id}: " . $e->getMessage());
              return redirect()->route('pedidos.index')
                 ->with('error', 'Ocurrió un error al eliminar el pedido.');

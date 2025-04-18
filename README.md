@@ -80,7 +80,7 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
 
 **5. Configuración de la Base de Datos:**
     *   Abre **phpMyAdmin** (desde el panel de XAMPP o `http://localhost/phpmyadmin`).
-    *   Crea una nueva base de datos (ej. `spherework`) con cotejamiento `utf8mb4_unicode_ci`.
+    *   Crea una nueva base de datos (ej. `spherework`) con cotejamiento `utf8mb4_unicode_ci` (puedes hacerlo ejecutando el archivo create_database.sql).
     *   Edita el archivo `.env` en la raíz de tu proyecto y configura las variables de base de datos:
         ```dotenv
         DB_CONNECTION=mysql
@@ -116,7 +116,22 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
         ```
     *   Accede a la aplicación en tu navegador, normalmente en: `http://127.0.0.1:8000`
 
-**9. Crear Usuario Administrador:**
+**9. Usuarios:**
+
+    Usuarios existentes:
+    Los seeders introducen dos usuarios:
+
+    *   Rol: administrador
+    *   Nombre de usuario: admin
+    *   Email: admin@spherework.com
+    *   Password: adminpassword
+    
+    *   Rol: cliente
+    *   Nombre de usuario: cliente
+    *   Email: cliente@spherework.com
+    *   Password: clientepassword
+
+    Crear Usuario Administrador:
     *   Ve a la URL de registro de tu aplicación (ej. `http://127.0.0.1:8000/register`) y crea un usuario normal.
     *   Abre **phpMyAdmin**, selecciona tu base de datos (`spherework`).
     *   Busca la tabla `users`.
@@ -124,6 +139,9 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
     *   Cambia el valor de la columna `rol` a `administrador`.
     *   Guarda los cambios.
     *   Ahora puedes iniciar sesión con este usuario para acceder a las funciones de administrador.
+
+    Crear Usuario Cliente:
+    *   Registra un nuevo usuario en la aplicacion.
 
 ## 🛠️ Uso
 
@@ -139,25 +157,5 @@ El archivo `.env` contiene variables de entorno importantes. Además de la base 
 *   `APP_URL`: URL base de tu aplicación (importante para generar enlaces correctos).
 *   Configuraciones de correo (si implementas envío de emails).
 
-**¡Importante!** Nunca subas tu archivo `.env` real a un repositorio Git público. Utiliza `.env.example` como plantilla.
 
-## 🌐 Notas sobre Despliegue
 
-Este proyecto puede ser desplegado en plataformas como Render o Fly.io que ofrecen planes gratuitos adecuados para aplicaciones Laravel. El proceso generalmente implica:
-1.  Subir el código a un repositorio Git (GitHub, GitLab).
-2.  Conectar el repositorio a la plataforma elegida.
-3.  Configurar el proceso de build (`composer install`, `npm install`, `npm run build`).
-4.  Configurar el comando de inicio (ej. `heroku-php-apache2 public/`).
-5.  Configurar las variables de entorno (incluyendo `APP_KEY`, `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` y las credenciales de la base de datos de producción).
-6.  Provisionar una base de datos en la plataforma.
-7.  Ejecutar las migraciones (`php artisan migrate --force`) a través de la consola/shell de la plataforma.
-8.  (Opcional) Ejecutar seeders (`php artisan db:seed --force`).
-9.  (Opcional) Configurar el enlace simbólico de storage si es necesario.
-
-Consulta la documentación específica de la plataforma elegida para obtener instrucciones detalladas sobre el despliegue de Laravel.
-
-## 📄 Licencia
-
-(Opcional: Añade aquí la licencia de tu proyecto, por ejemplo, MIT)
-
-Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.

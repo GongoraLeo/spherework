@@ -19,5 +19,8 @@ class AutoresSeeder extends Seeder
         Autores::create(['nombre' => 'Isabel Allende', 'pais' => 'Chile']);
         Autores::create(['nombre' => 'Haruki Murakami', 'pais' => 'Japón']);
         Autores::create(['nombre' => 'Jane Austen', 'pais' => 'Reino Unido']);
+        Autores::create(['nombre' => 'Sara Mesa', 'pais' => 'Espana']);
+        Autores::create(['nombre' => 'Cormac McCarthy', 'pais' => 'Estados Unidos']);
+        Autores::create(['nombre' => 'Alejandra Kamiya', 'pais' => 'Argentina']);
     }
 }

@@ -30,9 +30,11 @@ comentar el código en español
 
 **quitar el bton de editar pedidos para el usuario administrador
 
-corregir readme.md 
+comentarios para documentar el proyecto
+**corregir readme.md
+**aumentar seeders
 
-scriptss y automatizaciones
+scripts y automatizaciones o fichero ejecutable
 
 despliegue
 

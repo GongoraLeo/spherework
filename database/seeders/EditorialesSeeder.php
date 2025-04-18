@@ -18,5 +18,8 @@ class EditorialesSeeder extends Seeder
         Editoriales::create(['nombre' => 'Editorial Planeta', 'pais' => 'España']);
         Editoriales::create(['nombre' => 'Penguin Random House', 'pais' => 'Internacional']);
         Editoriales::create(['nombre' => 'Anagrama', 'pais' => 'España']);
+        Editoriales::create(['nombre' => 'Paginas de espuma', 'pais' => 'España']);
+        Editoriales::create(['nombre' => 'Debolsillo', 'pais' => 'España']);
+        Editoriales::create(['nombre' => 'Alba', 'pais' => 'España']);
     }
 }
