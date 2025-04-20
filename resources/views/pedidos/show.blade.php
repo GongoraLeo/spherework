@@ -2,8 +2,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-100 leading-tight">
-            {{-- Usamos la variable $pedido (singular) --}}
-            {{ __('Detalles del Pedido') }} #{{ $pedido->id }}
+            {{ __('Detalles del Pedido') }} #{{ $pedidos->id }}
         </h2>
     </x-slot>
 
@@ -17,17 +16,17 @@
                         <h3 class="text-lg font-semibold mb-4">Información General</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                             <div>
-                                <p><strong class="font-medium text-gray-600 dark:text-gray-400">Número de Pedido:</strong> {{ $pedido->id }}</p>
-                                <p><strong class="font-medium text-gray-600 dark:text-gray-400">Fecha:</strong> {{ $pedido->fecha_pedido ? $pedido->fecha_pedido->format('d/m/Y H:i') : 'N/A' }}</p>
+                                <p><strong class="font-medium text-gray-600 dark:text-gray-400">Número de Pedido:</strong> {{ $pedidos->id }}</p>
+                                <p><strong class="font-medium text-gray-600 dark:text-gray-400">Fecha:</strong> {{ $pedidos->fecha_pedido ? $pedidos->fecha_pedido->format('d/m/Y H:i') : 'N/A' }}</p>
                             </div>
                             <div>
-                                <p><strong class="font-medium text-gray-600 dark:text-gray-400">Estado:</strong> <span class="font-semibold capitalize">{{ $pedido->status }}</span></p>
-                                <p class="text-lg font-bold mt-1"><strong class="font-medium text-gray-600 dark:text-gray-400">Total:</strong> {{ number_format($pedido->total ?? 0, 2, ',', '.') }} €</p>
+                                <p><strong class="font-medium text-gray-600 dark:text-gray-400">Estado:</strong> <span class="font-semibold capitalize">{{ $pedidos->status }}</span></p>
+                                <p class="text-lg font-bold mt-1"><strong class="font-medium text-gray-600 dark:text-gray-400">Total:</strong> {{ number_format($pedidos->total ?? 0, 2, ',', '.') }} €</p>
                             </div>
                             {{-- Mostrar información del cliente (si la relación 'cliente' está cargada) --}}
-                            @if($pedido->cliente)
+                            @if($pedidos->cliente)
                                 <div class="sm:col-span-2 mt-2">
-                                     <p><strong class="font-medium text-gray-600 dark:text-gray-400">Cliente:</strong> {{ $pedido->cliente->name }} ({{ $pedido->cliente->email }})</p>
+                                     <p><strong class="font-medium text-gray-600 dark:text-gray-400">Cliente:</strong> {{ $pedidos->cliente->name }} ({{ $pedidos->cliente->email }})</p>
                                      {{-- Podrías añadir dirección de envío si la tienes asociada al pedido --}}
                                 </div>
                             @endif
@@ -48,8 +47,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    {{-- Usamos la relación detallespedido (asumiendo que se llama así en el modelo Pedidos) --}}
-                                    @forelse ($pedido->detallespedido as $detalle)
+                                    @forelse ($pedidos->detallespedidos as $detalle)
                                         <tr>
                                             <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                                                 {{-- Accedemos al título a través de la relación 'libro' cargada en el controlador --}}
@@ -74,7 +72,7 @@
                                 <tfoot class="bg-gray-50 dark:bg-gray-700">
                                     <tr>
                                         <td colspan="3" class="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-200 uppercase">Total Pedido:</td>
-                                        <td class="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">{{ number_format($pedido->total ?? 0, 2, ',', '.') }} €</td>
+                                        <td class="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">{{ number_format($pedidos->total ?? 0, 2, ',', '.') }} €</td>
                                     </tr>
                                 </tfoot>
                             </table>

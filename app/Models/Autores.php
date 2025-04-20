@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Autores extends Model
 {
+    use HasFactory;
     //definimos la tabla a la que pertenece el modelo
     protected $table = 'autores';
 

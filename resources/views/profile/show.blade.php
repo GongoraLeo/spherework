@@ -60,16 +60,16 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse ($pedidos as $pedido)
+                                @forelse ($pedidos as $pedidos)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">#{{ $pedido->id }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $pedido->fecha_pedido ? $pedido->fecha_pedido->format('d/m/Y H:i') : 'N/A' }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ ucfirst($pedido->status) }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($pedido->total ?? 0, 2, ',', '.') }} €</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">#{{ $pedidos->id }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $pedidos->fecha_pedido ? $pedidos->fecha_pedido->format('d/m/Y H:i') : 'N/A' }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ ucfirst($pedidos->status) }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($pedidos->total ?? 0, 2, ',', '.') }} €</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                             {{-- Asumiendo ruta 'pedidos.show' para ver detalles (puede ser la misma que admin o una específica de usuario) --}}
                                             @if(Route::has('pedidos.show'))
-                                                <a href="{{ route('pedidos.show', $pedido) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">Ver Detalles</a>
+                                                <a href="{{ route('pedidos.show', $pedidos) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">Ver Detalles</a>
                                             @endif
                                         </td>
                                     </tr>

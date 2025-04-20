@@ -22,16 +22,16 @@
                     <h3 class="text-lg font-semibold mb-4">Resumen de tu Pedido</h3>
 
                     <div class="mb-4 border-b pb-4 dark:border-gray-700">
-                        <p><strong class="font-medium">Número de Pedido:</strong> {{ $pedido->id }}</p>
-                        <p><strong class="font-medium">Fecha del Pedido:</strong> {{ $pedido->fecha_pedido->format('d/m/Y H:i') }}</p>
-                        <p><strong class="font-medium">Estado:</strong> <span class="capitalize">{{ $pedido->status }}</span></p> {{-- capitalize para 'Completado' --}}
-                        <p class="text-xl font-bold mt-2"><strong class="font-medium">Total Pagado:</strong> {{ number_format($pedido->total, 2, ',', '.') }} €</p>
+                        <p><strong class="font-medium">Número de Pedido:</strong> {{ $pedidos->id }}</p>
+                        <p><strong class="font-medium">Fecha del Pedido:</strong> {{ $pedidos->fecha_pedido->format('d/m/Y H:i') }}</p>
+                        <p><strong class="font-medium">Estado:</strong> <span class="capitalize">{{ $pedidos->status }}</span></p> {{-- capitalize para 'Completado' --}}
+                        <p class="text-xl font-bold mt-2"><strong class="font-medium">Total Pagado:</strong> {{ number_format($pedidos->total, 2, ',', '.') }} €</p>
                     </div>
 
                     {{-- Opcional: Mostrar los items del pedido --}}
                     <h4 class="text-md font-semibold mb-2">Artículos:</h4>
                     <ul class="list-disc list-inside mb-6 space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                        @foreach ($pedido->detallespedido as $detalle)
+                        @foreach ($pedidos->detallespedidos as $detalle)
                             <li>
                                 {{ $detalle->cantidad }} x {{ $detalle->libro->titulo ?? 'N/A' }}
                                 ({{ number_format($detalle->precio, 2, ',', '.') }} € c/u)

@@ -131,32 +131,32 @@ class PedidosController extends Controller
      * Carga las relaciones 'cliente' y 'detallespedido' (con sus libros asociados)
      * para mostrar toda la información relevante.
      *
-     * @param  \App\Models\Pedidos $pedido Instancia del modelo Pedidos inyectada por Laravel.
+     * @param  \App\Models\Pedidos $pedidos Instancia del modelo Pedidos inyectada por Laravel.
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista 'pedidos.show' o redirige si no está autorizado.
      */
-    public function show(Pedidos $pedido): View|RedirectResponse
+    public function show(Pedidos $pedidos): View|RedirectResponse
     {
         // 1. Autorización: Verificar si el usuario autenticado es el dueño o un administrador.
         $user = Auth::user();
 
         // Comprueba si el ID del usuario logueado NO coincide con el cliente_id del pedido
         // Y TAMPOCO el usuario logueado es administrador.
-        // Nota: Es crucial que $pedido->cliente_id no sea null para que la comparación funcione para el cliente.
-        if ($user->id !== $pedido->cliente_id && $user->rol !== 'administrador') {
+        // Nota: Es crucial que $pedidos->cliente_id no sea null para que la comparación funcione para el cliente.
+        if ($user->id != $pedidos->cliente_id && $user->rol !== 'administrador') {
             // Si no cumple ninguna condición, redirige al perfil del usuario con un error.
             return redirect()->route('profile.show')->with('error', 'No tienes permiso para ver este pedido.');
         }
 
         // 2. Carga de Relaciones (Eager Loading):
-        // `load()` carga las relaciones en el modelo $pedido ya existente.
+        // `load()` carga las relaciones en el modelo $pedidos ya existente.
         // Carga la relación 'cliente' (para mostrar datos del cliente).
         // Carga la relación 'detallespedido' y, anidadamente, la relación 'libro' de cada detalle.
-        $pedido->load(['cliente', 'detallespedido.libro']);
+        $pedidos->load(['cliente', 'detallespedidos.libro']);
 
         // 3. Retornar la Vista de Detalles:
         // Renderiza 'resources/views/pedidos/show.blade.php'.
-        // Pasa la instancia del pedido `$pedido` (con relaciones cargadas) a la vista.
-        return view('pedidos.show', compact('pedido'));
+        // Pasa la instancia del pedido `$pedidos` (con relaciones cargadas) a la vista.
+        return view('pedidos.show', compact('pedidos'));
     }
 
 
@@ -267,21 +267,22 @@ class PedidosController extends Controller
             // Busca el pedido pendiente asociado al usuario.
             $pedidoPendiente = Pedidos::where('cliente_id', $user->id)
                 ->where('status', Pedidos::STATUS_PENDIENTE)
-                ->with('detallespedido') // Carga los detalles para verificar si está vacío y calcular total.
+                ->with('detallespedidos') // Carga los detalles para verificar si está vacío y calcular total.
                 // ->lockForUpdate() // Opcional: Bloquea la fila del pedido para evitar modificaciones concurrentes durante la transacción. Útil en sistemas de alta concurrencia.
                 ->firstOrFail(); // Lanza ModelNotFoundException si no se encuentra ningún pedido pendiente.
 
             // 4. Verificar si el Carrito (Pedido Pendiente) está Vacío:
             // Se accede a la relación 'detallespedido' cargada previamente.
-            if ($pedidoPendiente->detallespedido->isEmpty()) {
+            if ($pedidoPendiente->detallespedidos->isEmpty()) {
+                Log::info('Carrito vacío detectado');
                  DB::rollBack(); // Revertir la transacción si el carrito está vacío.
                 // Redirige al índice del carrito con un error.
-                return redirect()->route('detallespedido.index')->with('error', 'Tu carrito está vacío.');
+                return redirect()->route('detallespedidos.index')->with('error', 'Tu carrito está vacío.');
             }
 
             // 5. Calcular el Total Final:
             // Suma los subtotales (cantidad * precio) de cada detalle del pedido.
-            $totalFinal = $pedidoPendiente->detallespedido->sum(function ($detalle) {
+            $totalFinal = $pedidoPendiente->detallespedidos->sum(function ($detalle) {
                 return $detalle->cantidad * $detalle->precio;
             });
 
@@ -312,22 +313,22 @@ class PedidosController extends Controller
 
             // 8. Redirección Éxito:
             // Redirige a la ruta de confirmación de éxito, pasando el ID del pedido procesado.
-            // Se usa el nombre de ruta 'checkout.success' definido en web.php.
-            return redirect()->route('checkout.success', ['pedido' => $pedidoPendiente->id])
+            // Se usa el nombre de ruta 'pedidos.checkout.success' definido en web.php.
+            return redirect()->route('pedidos.checkout.success', ['pedidos' => $pedidoPendiente->id])
                 ->with('success', '¡Tu pedido ha sido realizado con éxito!');
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             // 9. Manejo de Error: Pedido Pendiente No Encontrado.
             DB::rollBack(); // Revertir la transacción.
             // Redirige al carrito con un mensaje específico.
-            return redirect()->route('detallespedido.index')->with('error', 'No se encontró un pedido pendiente.');
+            return redirect()->route('detallespedidos.index')->with('error', 'No se encontró un pedido pendiente.');
         } catch (\Exception $e) {
             // 10. Manejo de Error Genérico (Incluye posible fallo de pago):
             DB::rollBack(); // Revertir la transacción en cualquier otro error.
             // Registra el error detallado.
             Log::error("Error en checkout para user {$user->id}: " . $e->getMessage());
             // Redirige al carrito con un mensaje genérico.
-            return redirect()->route('detallespedido.index')->with('error', 'Ocurrió un error al procesar tu pedido. Inténtalo de nuevo.');
+            return redirect()->route('detallespedidos.index')->with('error', 'Ocurrió un error al procesar tu pedido. Inténtalo de nuevo.');
         }
     }
 
@@ -339,32 +340,32 @@ class PedidosController extends Controller
      * el pedido no esté en estado 'pendiente'. Carga los detalles y libros
      * asociados para mostrar un resumen del pedido realizado.
      *
-     * @param  \App\Models\Pedidos $pedido Instancia del pedido cuya confirmación se mostrará.
+     * @param  \App\Models\Pedidos $pedidos Instancia del pedido cuya confirmación se mostrará.
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista 'pedidos.success' o redirige si no está autorizado/listo.
      */
-    public function showSuccess(Pedidos $pedido): View|RedirectResponse
+    public function showSuccess(Pedidos $pedidos): View|RedirectResponse
     {
         // 1. Autorización: Asegurarse que el usuario autenticado es el dueño del pedido.
-        if ($pedido->cliente_id !== Auth::id()) {
+        if ($pedidos->cliente_id !== Auth::id()) {
             // Detiene la ejecución si no es el dueño.
             abort(403, 'No tienes permiso para ver esta confirmación.');
         }
 
         // 2. Verificación de Estado: Asegurarse que el pedido ya no está pendiente.
         // Previene que se acceda a la página de éxito de un pedido que no se completó.
-        if ($pedido->status === Pedidos::STATUS_PENDIENTE) {
+        if ($pedidos->status === Pedidos::STATUS_PENDIENTE) {
              // Redirige al perfil del usuario con un error si el pedido aún está pendiente.
              return redirect()->route('profile.show')->with('error', 'Este pedido aún no ha sido completado.');
         }
 
         // 3. Carga de Relaciones: Cargar detalles y libros para mostrar el resumen.
-        // `load()` carga las relaciones en el modelo $pedido ya existente.
-        $pedido->load('detallespedido.libro');
+        // `load()` carga las relaciones en el modelo $pedidos ya existente.
+        $pedidos->load('detallespedidos.libro');
 
         // 4. Retornar la Vista de Éxito:
         // Renderiza 'resources/views/pedidos.success.blade.php'.
-        // Pasa la instancia del pedido `$pedido` (con relaciones cargadas) a la vista.
-        return view('pedidos.success', compact('pedido'));
+        // Pasa la instancia del pedido `$pedidos` (con relaciones cargadas) a la vista.
+        return view('pedidos.success', compact('pedidos'));
     }
 
     /**

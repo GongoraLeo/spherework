@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo; // Necesario para las relaciones
 use App\Models\User;   // Necesario para la relación con User
 use App\Models\Libros; // Necesario para la relación con Libros
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Comentarios extends Model
 {
+    use HasFactory;
     // Definimos la tabla a la que pertenece el modelo
     protected $table = 'comentarios';
 

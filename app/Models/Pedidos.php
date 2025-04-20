@@ -40,7 +40,7 @@ class Pedidos extends Model
     }
 
     // Relación con Detallespedidos
-    public function detallespedido(): HasMany // Mantenemos nombre singular por consistencia con código anterior
+    public function detallespedidos(): HasMany // Mantenemos nombre singular por consistencia con código anterior
     {
         return $this->hasMany(Detallespedidos::class, 'pedido_id');
     }

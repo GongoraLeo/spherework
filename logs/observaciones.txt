@@ -30,12 +30,12 @@ comentar el código en español
 
 **quitar el bton de editar pedidos para el usuario administrador
 
-comentarios para documentar el proyecto
+comentarios para documentar el proyecto (hechos de la carpeta Controllers)
 **corregir readme.md
 **aumentar seeders
+
+bateria de pruebas
 
 scripts y automatizaciones o fichero ejecutable
 
 despliegue
-
-
