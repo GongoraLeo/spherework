@@ -26,28 +26,31 @@ class ClientesController extends Controller
     /**
      * Muestra una lista paginada de todos los usuarios con rol 'cliente'.
      *
-     * Esta acción está restringida a usuarios administradores.
-     * Recupera los usuarios filtrados por rol, los ordena por nombre y los pagina.
-     * Renderiza la vista del índice de clientes del panel de administración.
+     * Esta acción está restringida a usuarios administradores. Primero, verifica si el usuario
+     * autenticado tiene el rol 'administrador' usando `Auth::user()->rol`. Si no lo es,
+     * redirige a la ruta 'profile.entry' con un mensaje de error. Si la autorización es correcta,
+     * recupera los usuarios filtrados por `rol = 'cliente'`, los ordena alfabéticamente por
+     * `name` y los pagina (20 por página por defecto) usando `paginate(20)`.
+     * Finalmente, renderiza la vista 'admin.clientes.index' pasándole la colección paginada de clientes.
      *
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista 'admin.clientes.index' o redirige si no es admin.
      */
     public function index(): View|RedirectResponse
     {
-        // 1. Autorización: Verificar si el usuario autenticado es un administrador.
+        // 1. Autorización: Verifica si el usuario autenticado es un administrador.
         // Se comprueba el atributo 'rol' del usuario logueado.
         if (Auth::user()->rol !== 'administrador') {
             // Si no es admin, redirige a la ruta de entrada del perfil con un mensaje de error.
             return redirect()->route('profile.entry')->with('error', 'Acceso no autorizado.');
         }
 
-        // 2. Obtención de Datos: Recuperar los usuarios que son clientes.
+        // 2. Obtención de Datos: Recupera los usuarios que son clientes.
         // Se utiliza el modelo User y se filtra por la columna 'rol'.
         $clientes = User::where('rol', 'cliente')
                         ->orderBy('name') // Ordena alfabéticamente por nombre.
                         ->paginate(20); // Pagina los resultados (20 por página). Ajustable.
 
-        // 3. Retornar la Vista: Mostrar la lista de clientes.
+        // 3. Retornar la Vista: Muestra la lista de clientes.
         // Se renderiza la vista 'resources/views/admin/clientes/index.blade.php'.
         // Se pasa la colección paginada de clientes a la vista mediante `compact()`.
         // La vista accederá a los datos a través de la variable $clientes.
@@ -59,9 +62,16 @@ class ClientesController extends Controller
      * Muestra el perfil detallado de un cliente específico (vista de administrador).
      *
      * Restringido a administradores. Utiliza Route Model Binding para obtener la instancia
-     * del usuario (`$cliente`) basado en el ID de la ruta. Verifica que el usuario
-     * solicitado sea realmente un cliente. Carga información relacionada como pedidos
-     * y comentarios recientes del cliente.
+     * del usuario (`$cliente`) basado en el ID de la ruta. Primero, verifica que el usuario
+     * autenticado (`Auth::user()`) tenga el rol 'administrador'. Si no, redirige a 'profile.entry'.
+     * Luego, realiza una verificación adicional para asegurar que el usuario solicitado (`$cliente`)
+     * tenga el rol 'cliente', previniendo que un admin vea el perfil de otro admin a través de esta ruta;
+     * si no es cliente, redirige a 'admin.clientes.index' con un error.
+     * Si ambas verificaciones pasan, utiliza `load()` para realizar Eager Loading de las relaciones
+     * 'pedidos' (limitados a los últimos 5 no pendientes, ordenados por fecha) y 'comentarios'
+     * (limitados a los últimos 10, ordenados por fecha, incluyendo la relación 'libro' de cada comentario).
+     * Finalmente, extrae opcionalmente las relaciones cargadas en variables separadas (`$pedidos`, `$comentarios`)
+     * y renderiza la vista 'admin.clientes.show', pasándole el cliente y sus datos relacionados.
      *
      * @param  \App\Models\User $cliente Instancia del modelo User inyectada por Laravel
      *                                   basada en el parámetro de ruta (ej. /admin/clientes/{cliente}).
@@ -69,7 +79,7 @@ class ClientesController extends Controller
      */
     public function show(User $cliente): View|RedirectResponse
     {
-        // 1. Autorización: Verificar que el usuario LOGUEADO sea administrador.
+        // 1. Autorización: Verifica que el usuario LOGUEADO sea administrador.
         if (Auth::user()->rol !== 'administrador') {
             // Registra un intento de acceso no autorizado.
             Log::warning("Intento no autorizado de ver cliente ID {$cliente->id} por usuario ID " . Auth::id());
@@ -77,20 +87,17 @@ class ClientesController extends Controller
             return redirect()->route('profile.entry')->with('error', 'Acceso no autorizado.');
         }
 
-        // 2. Verificación Adicional: Asegurarse de que el usuario solicitado ($cliente) es de rol 'cliente'.
+        // 2. Verificación Adicional: Asegura que el usuario solicitado ($cliente) es de rol 'cliente'.
         // Esto previene que un admin intente ver el perfil de otro admin a través de esta ruta.
         if ($cliente->rol !== 'cliente') {
             // Registra el intento.
             Log::info("Admin intentó ver perfil de usuario ID {$cliente->id} que no es cliente (Rol: {$cliente->rol}).");
             // Redirige a la lista de clientes del admin con un error.
-            // **CORRECCIÓN**: La redirección debe usar 'admin.clientes.index' según la estructura de rutas.
             return redirect()->route('admin.clientes.index')->with('error', 'El usuario especificado no es un cliente.');
         }
 
-        // 3. Carga de Datos Relacionados (Eager Loading):
-        // Se utiliza `load()` para cargar relaciones después de que el modelo principal ($cliente) ya ha sido obtenido.
-        // Esto es eficiente porque realiza consultas separadas solo para las relaciones necesarias.
-        // Se cargan las mismas relaciones que se mostrarían en el perfil del propio cliente (ProfileController@show).
+        // 3. Carga de Datos Relacionados (Eager Loading con restricciones):
+        // Se utiliza `load()` para cargar relaciones en el modelo $cliente ya existente.
         $cliente->load([
             // Carga la relación 'pedidos' definida en el modelo User.
             'pedidos' => function ($query) {
@@ -115,12 +122,11 @@ class ClientesController extends Controller
         ]);
 
         // 4. Extracción Opcional de Datos Cargados (para claridad en la vista):
-        // Aunque se podría acceder directamente a $cliente->pedidos y $cliente->comentarios en la vista,
-        // extraerlos aquí puede hacer el código de la vista un poco más limpio.
+        // Se extraen las colecciones cargadas para pasarlas explícitamente a la vista.
         $pedidos = $cliente->pedidos;
         $comentarios = $cliente->comentarios;
 
-        // 5. Retornar la Vista: Mostrar el perfil del cliente para el admin.
+        // 5. Retornar la Vista: Muestra el perfil del cliente para el admin.
         // Se renderiza la vista 'resources/views/admin/clientes/show.blade.php'.
         // Se pasa el objeto $cliente principal y las colecciones de $pedidos y $comentarios.
         return view('admin.clientes.show', compact('cliente', 'pedidos', 'comentarios'));

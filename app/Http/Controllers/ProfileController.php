@@ -29,7 +29,8 @@ use App\Models\User;
  * (con un resumen de actividad reciente como pedidos y comentarios),
  * mostrar el formulario de edición, actualizar la información del perfil
  * y eliminar la cuenta del usuario.
- * Basado en el controlador generado por Laravel Breeze, con personalizaciones.
+ * Se basa en el controlador generado por Laravel Breeze, con personalizaciones
+ * para mostrar información adicional en el perfil (pedidos, comentarios).
  *
  * @package App\Http\Controllers
  */
@@ -39,9 +40,15 @@ class ProfileController extends Controller
     /**
      * Muestra el panel del perfil del usuario autenticado.
      *
-     * Obtiene el usuario autenticado y carga sus pedidos recientes (excluyendo los pendientes)
-     * y sus comentarios recientes (incluyendo el libro asociado a cada comentario).
-     * Pasa estos datos a la vista 'profile.show' para su visualización.
+     * Obtiene el usuario autenticado a través de `$request->user()`.
+     * Carga los 5 pedidos más recientes del usuario que no estén en estado 'pendiente',
+     * utilizando la relación `pedidos()` y filtrando por los estados `PROCESANDO`,
+     * `COMPLETADO`, `ENVIADO`, `ENTREGADO`.
+     * Carga los 10 comentarios más recientes del usuario, incluyendo la relación `libro`
+     * asociada a cada comentario mediante Eager Loading (`with('libro')`) para evitar
+     * consultas N+1.
+     * Pasa la instancia del usuario, la colección de pedidos y la colección de comentarios
+     * a la vista 'profile.show' para su visualización.
      *
      * @param Request $request La solicitud HTTP entrante.
      * @return View Retorna la vista 'profile.show' con los datos del usuario, pedidos y comentarios.
@@ -98,8 +105,9 @@ class ProfileController extends Controller
     /**
      * Muestra el formulario para editar la información del perfil del usuario.
      *
-     * Simplemente obtiene el usuario autenticado y lo pasa a la vista
-     * 'profile.edit', que contiene los campos del formulario.
+     * Obtiene la instancia del usuario autenticado a través de `$request->user()`
+     * y la pasa a la vista 'profile.edit'. Esta vista contiene el formulario
+     * con los campos prellenados con la información actual del usuario.
      *
      * @param Request $request La solicitud HTTP entrante.
      * @return View Retorna la vista 'profile.edit' con los datos del usuario.
@@ -116,14 +124,18 @@ class ProfileController extends Controller
     /**
      * Actualiza la información del perfil del usuario autenticado.
      *
-     * Utiliza `ProfileUpdateRequest` (un Form Request) para validar automáticamente
-     * los datos de la solicitud antes de que se ejecute este método.
-     * Rellena el modelo del usuario con los datos validados.
-     * Si el email ha cambiado, marca el email como no verificado.
-     * Guarda los cambios en la base de datos.
-     * Redirige de vuelta al formulario de edición con un mensaje de estado.
+     * Utiliza la inyección de dependencias para recibir una instancia de `ProfileUpdateRequest`.
+     * Este Form Request se encarga de validar los datos de la solicitud antes de que se ejecute
+     * la lógica del controlador.
+     * Rellena el modelo del usuario (`$request->user()`) con los datos validados obtenidos
+     * mediante `$request->validated()`.
+     * Comprueba si el campo 'email' ha sido modificado usando `isDirty('email')`. Si es así,
+     * establece el campo `email_verified_at` a `null` para requerir una nueva verificación.
+     * Guarda los cambios en el modelo del usuario en la base de datos usando `save()`.
+     * Finalmente, redirige al usuario de vuelta a la ruta 'profile.edit' con un mensaje
+     * flash de estado ('profile-updated') para indicar que la actualización fue exitosa.
      *
-     * @param ProfileUpdateRequest $request La solicitud HTTP validada.
+     * @param ProfileUpdateRequest $request La solicitud HTTP validada por el Form Request.
      * @return RedirectResponse Redirige a la ruta 'profile.edit'.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
@@ -157,10 +169,16 @@ class ProfileController extends Controller
     /**
      * Elimina la cuenta del usuario autenticado.
      *
-     * Valida que la contraseña proporcionada por el usuario coincida con la actual.
-     * Si la validación es correcta, desloguea al usuario, elimina su registro
-     * de la base de datos, invalida la sesión y regenera el token de sesión
-     * por seguridad. Finalmente, redirige al usuario a la página principal.
+     * Valida la solicitud usando `validateWithBag('userDeletion', ...)`. Requiere que
+     * se proporcione la contraseña actual ('password') y que coincida con la del usuario
+     * autenticado ('current_password'). Los errores de validación se almacenan en el
+     * ErrorBag 'userDeletion'.
+     * Si la validación es exitosa, obtiene la instancia del usuario (`$user`).
+     * Desloguea al usuario de la aplicación usando `Auth::logout()`.
+     * Elimina el registro del usuario de la base de datos llamando a `$user->delete()`.
+     * Invalida la sesión actual del usuario (`$request->session()->invalidate()`) y
+     * regenera el token CSRF (`$request->session()->regenerateToken()`) por seguridad.
+     * Finalmente, redirige al usuario a la página principal de la aplicación ('/').
      *
      * @param Request $request La solicitud HTTP entrante (que contiene la contraseña).
      * @return RedirectResponse Redirige a la ruta raíz ('/').

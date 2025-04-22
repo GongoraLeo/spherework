@@ -25,17 +25,22 @@ use Illuminate\Routing\Controller as BaseController;
  */
 abstract class Controller extends BaseController
 {
-    // Utiliza el trait AuthorizesRequests.
-    // Este trait proporciona el método `authorize` que permite verificar si el usuario
-    // autenticado tiene permiso para realizar una acción determinada, generalmente
-    // interactuando con las Policies de la aplicación.
+    /**
+     * Utiliza el trait AuthorizesRequests.
+     * Este trait proporciona el método `authorize` que permite verificar si el usuario
+     * autenticado tiene permiso para realizar una acción determinada, generalmente
+     * interactuando con las Policies de la aplicación. Se incluye aquí para que todos
+     * los controladores hijos puedan usar fácilmente la autorización basada en Policies.
+     */
     use AuthorizesRequests;
 
-    // Utiliza el trait ValidatesRequests.
-    // Este trait proporciona el método `validate` (y otros relacionados) que simplifica
-    // la validación de los datos de las solicitudes HTTP entrantes utilizando las
-    // reglas de validación de Laravel. Si la validación falla, automáticamente
-    // lanza una excepción y redirige al usuario de vuelta con los errores.
-    // Alternativamente, se podría usar `DispatchesJobs` si los controladores necesitaran despachar trabajos en cola.
+    /**
+     * Utiliza el trait ValidatesRequests.
+     * Este trait proporciona el método `validate` (y otros relacionados) que simplifica
+     * la validación de los datos de las solicitudes HTTP entrantes utilizando las
+     * reglas de validación de Laravel. Si la validación falla, automáticamente
+     * lanza una excepción y redirige al usuario de vuelta con los errores. Se incluye
+     * para ofrecer una forma estandarizada y conveniente de validación en todos los controladores.
+     */
     use ValidatesRequests;
 }

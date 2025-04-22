@@ -28,9 +28,12 @@ class LibrosController extends Controller
     /**
      * Muestra una lista paginada de todos los libros disponibles (catálogo).
      *
-     * Esta vista es pública. Utiliza Eager Loading para cargar las relaciones
-     * 'autor' y 'editorial' de forma eficiente y evitar consultas N+1 en la vista.
-     * Los libros se muestran ordenados por fecha de creación descendente y paginados.
+     * Esta vista es pública y accesible para cualquier visitante. Utiliza Eager Loading
+     * con `with(['autor', 'editorial'])` para cargar las relaciones 'autor' y 'editorial'
+     * de forma eficiente junto con los libros, evitando así consultas N+1 en la vista.
+     * Los libros se obtienen ordenados por fecha de creación descendente (`latest()`)
+     * y se paginan (`paginate(15)`) para mostrar 15 libros por página.
+     * Finalmente, renderiza la vista 'libros.index' pasándole la colección paginada de libros.
      *
      * @return \Illuminate\View\View Retorna la vista 'libros.index' con la lista de libros.
      */
@@ -52,22 +55,25 @@ class LibrosController extends Controller
     /**
      * Muestra el formulario para crear un nuevo libro.
      *
-     * Esta acción está restringida a usuarios administradores.
-     * Obtiene listas de todos los autores y editoriales disponibles para
-     * poblar los campos 'select' en el formulario de creación.
+     * Esta acción está restringida a usuarios administradores. Primero, verifica si el usuario
+     * está autenticado (`Auth::check()`) y si su rol es 'administrador' (`Auth::user()->rol`).
+     * Si no cumple los requisitos, redirige al índice público de libros con un mensaje de error.
+     * Si está autorizado, obtiene todas las instancias de `Autores` y `Editoriales`, ordenadas
+     * por nombre, para poblar los campos 'select' en el formulario.
+     * Finalmente, renderiza la vista 'libros.create', pasándole las colecciones de autores y editoriales.
      *
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista 'libros.create' o redirige si no es admin.
      */
     public function create(): View|RedirectResponse
     {
-        // 1. Autorización: Verificar si el usuario está autenticado y es administrador.
+        // 1. Autorización: Verifica si el usuario está autenticado y es administrador.
         if (!Auth::check() || Auth::user()->rol !== 'administrador') {
             // Si no cumple, redirige al índice de libros (público) con un mensaje de error.
             return redirect()->route('libros.index')->with('error', 'No tienes permiso para añadir libros.');
             // Alternativa: abort(403, 'Acción no autorizada.'); detendría la ejecución.
         }
 
-        // 2. Obtener Datos para Selects: Recuperar autores y editoriales.
+        // 2. Obtener Datos para Selects: Recupera autores y editoriales.
         // Se obtienen todos los autores ordenados por nombre.
         $autores = Autores::orderBy('nombre')->get();
         // Se obtienen todas las editoriales ordenadas por nombre.
@@ -82,17 +88,22 @@ class LibrosController extends Controller
     /**
      * Almacena un nuevo libro creado en la base de datos.
      *
-     * Restringido a administradores. Valida los datos recibidos del formulario
-     * (título, ISBN único, año, precio, autor_id y editorial_id existentes).
-     * Si la validación es exitosa, crea un nuevo registro en la tabla 'libros'.
-     * Redirige al índice de libros con un mensaje de éxito.
+     * Restringido a administradores. Primero, verifica la autorización del usuario; si no es
+     * administrador, detiene la ejecución con `abort(403)`. Luego, valida los datos recibidos
+     * del formulario usando `$request->validate()`. Las reglas aseguran que el título, ISBN (único),
+     * año de publicación (dentro de un rango), precio (no negativo), ID de autor (existente)
+     * y ID de editorial (existente) sean válidos. Si la validación es exitosa, crea un nuevo
+     * registro en la tabla 'libros' usando `Libros::create($request->all())`.
+     * Finalmente, redirige al índice público de libros (`libros.index`) con un mensaje de éxito.
+     * No se incluye manejo explícito de excepciones para la creación, asumiendo que la validación
+     * previene la mayoría de los errores.
      *
      * @param  \Illuminate\Http\Request  $request Objeto con los datos del formulario de creación.
      * @return \Illuminate\Http\RedirectResponse Redirige al índice de libros.
      */
     public function store(Request $request): RedirectResponse
     {
-        // 1. Autorización: Verificar rol de administrador.
+        // 1. Autorización: Verifica rol de administrador.
         if (!Auth::check() || Auth::user()->rol !== 'administrador') {
              // Detiene la ejecución si no está autorizado.
              abort(403, 'Acción no autorizada.');
@@ -118,17 +129,18 @@ class LibrosController extends Controller
         // Redirige a la ruta del índice de libros (público) con un mensaje flash de éxito.
         return redirect()->route('libros.index')
             ->with('success', 'Libro añadido correctamente.');
-        // Nota: No se incluye manejo de excepciones explícito aquí, asumiendo que la validación
-        // previene la mayoría de los errores. Si la creación falla, Laravel lanzará una excepción.
     }
 
 
     /**
      * Muestra los detalles de un libro específico.
      *
-     * Esta vista es pública. Utiliza Route Model Binding para obtener la instancia
-     * del libro (`$libros`). Carga relaciones necesarias como autor, editorial y
-     * comentarios (incluyendo el usuario de cada comentario) si no se cargaron previamente.
+     * Esta vista es pública. Utiliza Route Model Binding para obtener automáticamente la instancia
+     * del libro (`$libros`) correspondiente al ID en la URL. Emplea `loadMissing()` para realizar
+     * Lazy Eager Loading: carga las relaciones 'autor', 'editorial' y 'comentarios' (incluyendo
+     * la relación anidada 'user' de cada comentario) solo si no han sido cargadas previamente.
+     * Esto es eficiente si se accede directamente a la URL del libro.
+     * Finalmente, renderiza la vista 'libros.show', pasándole la instancia del libro con sus relaciones cargadas.
      *
      * @param  \App\Models\Libros  $libros Instancia del modelo Libros inyectada por Laravel
      *                                    basada en el parámetro de ruta (ej. /libros/{libro}).
@@ -152,9 +164,11 @@ class LibrosController extends Controller
     /**
      * Muestra el formulario para editar un libro existente.
      *
-     * Restringido a administradores. Utiliza Route Model Binding para obtener
-     * la instancia del libro a editar. Obtiene listas de autores y editoriales
-     * para los desplegables del formulario.
+     * Restringido a administradores. Verifica la autorización del usuario. Si no es admin,
+     * redirige al índice público. Utiliza Route Model Binding para obtener la instancia
+     * del libro (`$libros`) a editar. Obtiene listas completas de autores y editoriales,
+     * ordenadas por nombre, para poblar los desplegables ('select') del formulario.
+     * Renderiza la vista 'libros.edit', pasándole el libro y las listas de autores y editoriales.
      *
      * @param  \App\Models\Libros  $libros Instancia del modelo Libros a editar (Route Model Binding).
      *                                    Se mantiene el nombre plural `$libros`.
@@ -162,13 +176,13 @@ class LibrosController extends Controller
      */
     public function edit(Libros $libros): View|RedirectResponse
     {
-        // 1. Autorización: Verificar si el usuario es administrador.
+        // 1. Autorización: Verifica si el usuario es administrador.
         if (!Auth::check() || Auth::user()->rol !== 'administrador') {
              // Redirige al índice público si no tiene permiso.
              return redirect()->route('libros.index')->with('error', 'No tienes permiso para editar libros.');
         }
 
-        // 2. Obtener Datos para Selects: Recuperar autores y editoriales.
+        // 2. Obtener Datos para Selects: Recupera autores y editoriales.
         $autores = Autores::orderBy('nombre')->get();
         $editoriales = Editoriales::orderBy('nombre')->get();
 
@@ -181,9 +195,13 @@ class LibrosController extends Controller
     /**
      * Actualiza un libro existente en la base de datos.
      *
-     * Restringido a administradores. Valida los datos recibidos, ajustando la regla
-     * 'unique' para el ISBN para ignorar el libro actual. Actualiza el registro
-     * y redirige al índice de libros con un mensaje de éxito.
+     * Restringido a administradores. Verifica la autorización; si falla, usa `abort(403)`.
+     * Valida los datos recibidos del formulario de edición usando `$request->validate()`.
+     * La regla 'unique' para el campo 'isbn' se ajusta usando `unique:libros,isbn,' . $libros->id`
+     * para asegurar que el ISBN sea único, pero ignorando el registro del libro que se está actualizando.
+     * Si la validación es correcta, actualiza el libro usando el método `update()` sobre la instancia
+     * `$libros` inyectada por Route Model Binding, pasándole `$request->all()`.
+     * Finalmente, redirige al índice público de libros (`libros.index`) con un mensaje de éxito.
      *
      * @param  \Illuminate\Http\Request  $request Datos del formulario de edición.
      * @param  \App\Models\Libros  $libros Instancia del libro a actualizar (Route Model Binding).
@@ -192,7 +210,7 @@ class LibrosController extends Controller
      */
     public function update(Request $request, Libros $libros): RedirectResponse
     {
-         // 1. Autorización: Verificar rol de administrador.
+         // 1. Autorización: Verifica rol de administrador.
         if (!Auth::check() || Auth::user()->rol !== 'administrador') {
              abort(403, 'Acción no autorizada.');
         }
@@ -225,9 +243,14 @@ class LibrosController extends Controller
     /**
      * Elimina un libro específico de la base de datos.
      *
-     * Restringido a administradores. Intenta eliminar el libro. Si falla debido a
-     * restricciones de clave foránea (ej. el libro está en detalles de pedidos),
-     * captura la excepción y redirige con un mensaje de error específico.
+     * Restringido a administradores. Verifica la autorización; si falla, usa `abort(403)`.
+     * Intenta eliminar el libro usando `$libros->delete()` dentro de un bloque try-catch.
+     * Si la eliminación tiene éxito, redirige al índice de libros con un mensaje de éxito.
+     * Si se produce una `QueryException` (comúnmente debido a restricciones de clave foránea,
+     * por ejemplo, si el libro existe en la tabla `detallespedidos`), captura esta excepción
+     * específicamente, registra el error y redirige al índice con un mensaje de error
+     * indicando que el libro no se puede eliminar debido a asociaciones existentes.
+     * Captura cualquier otra excepción genérica, la registra y redirige con un mensaje de error genérico.
      *
      * @param  \App\Models\Libros  $libros Instancia del libro a eliminar (Route Model Binding).
      *                                    Se mantiene el nombre plural `$libros`.
@@ -235,7 +258,7 @@ class LibrosController extends Controller
      */
     public function destroy(Libros $libros): RedirectResponse
     {
-         // 1. Autorización: Verificar rol de administrador.
+         // 1. Autorización: Verifica rol de administrador.
         if (!Auth::check() || Auth::user()->rol !== 'administrador') {
              abort(403, 'Acción no autorizada.');
         }
@@ -252,8 +275,8 @@ class LibrosController extends Controller
             // 4. Manejo de Error Específico (Restricción de BD):
             // Captura excepciones de consulta de base de datos, que a menudo indican
             // problemas de clave foránea (ej. intentar borrar un libro que existe en `detallespedidos`).
-            // Se podría verificar el código de error SQL específico si fuera necesario ($e->getCode()).
             Log::error("Error de BD al eliminar libro ID {$libros->id}: " . $e->getMessage()); // Loguea el error real.
+            // Redirige con un mensaje específico para el usuario.
             return redirect()->route('libros.index')
                 ->with('error', 'No se puede eliminar el libro porque está asociado a pedidos existentes.');
 
@@ -261,6 +284,7 @@ class LibrosController extends Controller
              // 5. Manejo de Error Genérico:
              // Captura cualquier otra excepción inesperada durante la eliminación.
              Log::error("Error al eliminar libro ID {$libros->id}: " . $e->getMessage()); // Loguea el error.
+             // Redirige con un mensaje genérico.
              return redirect()->route('libros.index')
                 ->with('error', 'Ocurrió un error al eliminar el libro.');
         }

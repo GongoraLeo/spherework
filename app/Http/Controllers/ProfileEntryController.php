@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse; // Para especificar el tipo de retorno de 
  * centralizado después del login o al acceder a una ruta de perfil genérica.
  * Su única responsabilidad es determinar el rol del usuario autenticado y redirigirlo
  * a la vista de perfil o dashboard correspondiente (administrador o cliente).
+ * Se utiliza para centralizar la lógica de redirección post-autenticación o acceso genérico al perfil.
  *
  * @package App\Http\Controllers
  */
@@ -23,14 +24,17 @@ class ProfileEntryController extends Controller
      * Maneja la solicitud entrante para este controlador de acción única.
      *
      * Este método se ejecuta automáticamente cuando se invoca la ruta asociada
-     * a este controlador. Verifica si el usuario está autenticado. Si no lo está,
-     * lo redirige al login. Si está autenticado, obtiene el usuario, comprueba
-     * su rol ('administrador' o 'cliente') y lo redirige a la ruta del dashboard
-     * de administrador ('admin.dashboard') o al perfil estándar del cliente
-     * ('profile.show') respectivamente.
+     * a este controlador (definida como `profile.entry`). Primero, verifica si
+     * el usuario está autenticado usando `Auth::check()`. Si no lo está (por ejemplo,
+     * si se accede a la ruta directamente sin sesión), redirige a la página de login
+     * (`route('login')`). Si el usuario está autenticado, obtiene la instancia del
+     * usuario con `Auth::user()`. Luego, comprueba el valor del atributo `rol` del usuario.
+     * Si el rol es 'administrador', redirige a la ruta del dashboard de administrador
+     * (`route('admin.dashboard')`). En cualquier otro caso (asumiendo roles como 'cliente'),
+     * redirige a la ruta del perfil estándar del cliente (`route('profile.show')`).
      *
-     * @param  \Illuminate\Http\Request  $request La solicitud HTTP entrante.
-     * @return \Illuminate\Http\RedirectResponse Siempre retorna una redirección a la ruta apropiada.
+     * @param  \Illuminate\Http\Request  $request La solicitud HTTP entrante (no utilizada directamente en la lógica).
+     * @return \Illuminate\Http\RedirectResponse Siempre retorna una redirección a la ruta apropiada según el rol o al login.
      */
     public function __invoke(Request $request): RedirectResponse
     {

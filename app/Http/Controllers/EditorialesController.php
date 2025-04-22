@@ -25,26 +25,29 @@ class EditorialesController extends Controller
     /**
      * Muestra una lista paginada de todas las editoriales.
      *
-     * Restringido a usuarios administradores. Obtiene las editoriales ordenadas
-     * por nombre y las pagina para una visualización eficiente.
-     * Renderiza la vista del índice de editoriales del panel de administración.
+     * Restringido a usuarios administradores. Primero, verifica si el usuario autenticado
+     * tiene el rol 'administrador' usando `Auth::user()->rol`. Si no lo es, redirige a la
+     * ruta 'profile.entry' con un mensaje de error. Si está autorizado, obtiene las
+     * editoriales de la base de datos usando el modelo `Editoriales`, las ordena
+     * alfabéticamente por 'nombre' y las pagina (15 por página por defecto) usando `paginate(15)`.
+     * Finalmente, renderiza la vista 'admin.editoriales.index' pasándole la colección paginada.
      *
      * @return View|RedirectResponse Retorna la vista 'admin.editoriales.index' o redirige si no es admin.
      */
     public function index(): View|RedirectResponse
     {
-        // 1. Autorización: Verificar si el usuario actual es administrador.
+        // 1. Autorización: Verifica si el usuario actual es administrador.
         if (Auth::user()->rol !== 'administrador') {
             // Si no es admin, redirige a la ruta de entrada del perfil con un mensaje flash de error.
             return redirect()->route('profile.entry')->with('error', 'Acceso no autorizado.');
         }
 
-        // 2. Obtención de Datos: Recuperar editoriales de la base de datos.
+        // 2. Obtención de Datos: Recupera editoriales de la base de datos.
         // Se utiliza el modelo Editoriales, se ordenan por 'nombre' ascendentemente
         // y se pagina el resultado (15 editoriales por página por defecto).
         $editoriales = Editoriales::orderBy('nombre')->paginate(15);
 
-        // 3. Retornar la Vista: Mostrar la lista.
+        // 3. Retornar la Vista: Muestra la lista.
         // Se renderiza la vista 'resources/views/admin/editoriales/index.blade.php'.
         // Se pasa la colección paginada de editoriales a la vista usando compact().
         // La vista podrá acceder a los datos a través de la variable $editoriales.
@@ -54,14 +57,16 @@ class EditorialesController extends Controller
     /**
      * Muestra el formulario para crear una nueva editorial.
      *
-     * Restringido a administradores. Simplemente retorna la vista que contiene
+     * Restringido a administradores. Primero, verifica si el usuario autenticado es administrador.
+     * Si no lo es, redirige al índice de editoriales del admin con un mensaje de error.
+     * Si está autorizado, simplemente retorna la vista 'admin.editoriales.create' que contiene
      * el formulario HTML para la creación de una nueva editorial.
      *
      * @return View|RedirectResponse Retorna la vista del formulario de creación o redirige si no es admin.
      */
     public function create(): View|RedirectResponse
     {
-        // 1. Autorización: Verificar rol de administrador.
+        // 1. Autorización: Verifica rol de administrador.
         if (Auth::user()->rol !== 'administrador') {
             // Si no tiene permiso, redirige al índice de editoriales (admin) con un mensaje de error.
             return redirect()->route('admin.editoriales.index')->with('error', 'No tienes permiso para crear editoriales.');
@@ -75,30 +80,37 @@ class EditorialesController extends Controller
     /**
      * Almacena una nueva editorial creada en la base de datos.
      *
-     * Restringido a administradores. Valida los datos recibidos del formulario
-     * (nombre único y país). Si la validación es exitosa, crea un nuevo registro
-     * en la tabla 'editoriales'. Maneja posibles excepciones durante la creación
-     * y redirige con mensajes de éxito o error.
+     * Restringido a administradores. Primero, verifica si el usuario es administrador
+     * usando `Auth::user()->rol`. Si no lo es, detiene la ejecución con `abort(403)`.
+     * Luego, valida los datos recibidos del formulario usando `$request->validate()`.
+     * Las reglas especifican que 'nombre' es obligatorio y único en la tabla 'editoriales',
+     * y 'pais' es obligatorio. Si la validación falla, Laravel redirige automáticamente.
+     * Si la validación es exitosa, intenta crear un nuevo registro en la tabla 'editoriales'
+     * usando `Editoriales::create($request->all())` dentro de un bloque try-catch.
+     * Si la creación es exitosa, redirige al índice de editoriales del admin ('admin.editoriales.index')
+     * con un mensaje de éxito. Si ocurre una excepción durante la creación, registra el error
+     * usando `Log::error()` y redirige de vuelta al formulario anterior (`back()`) con un
+     * mensaje de error y los datos introducidos (`withInput()`).
      *
      * @param Request $request Objeto que contiene todos los datos enviados en la solicitud HTTP (formulario).
      * @return RedirectResponse Siempre retorna una redirección (al índice si éxito, atrás si error).
      */
     public function store(Request $request): RedirectResponse
     {
-        // 1. Autorización: Verificar rol de administrador.
+        // 1. Autorización: Verifica rol de administrador.
         // Se usa abort(403) para detener la ejecución si no está autorizado.
         if (Auth::user()->rol !== 'administrador') {
             abort(403, 'Acción no autorizada.');
         }
 
-        // 2. Validación: Asegurar que los datos recibidos son correctos y únicos donde sea necesario.
+        // 2. Validación: Asegura que los datos recibidos son correctos y únicos donde sea necesario.
         $request->validate([
             // 'nombre' es obligatorio, string, máximo 255 caracteres y debe ser único en la tabla 'editoriales'.
             'nombre' => 'required|string|max:255|unique:editoriales,nombre',
             'pais'   => 'required|string|max:255' // 'pais' es obligatorio, string, máximo 255 caracteres.
         ]);
 
-        // 3. Creación del Recurso: Intentar guardar la nueva editorial.
+        // 3. Creación del Recurso: Intenta guardar la nueva editorial.
         try {
             // Se utiliza el método estático `create` del modelo Editoriales.
             // `$request->all()` devuelve los datos validados que coinciden con los atributos 'fillable' del modelo.
@@ -121,8 +133,11 @@ class EditorialesController extends Controller
     /**
      * Muestra los detalles de una editorial específica.
      *
-     * Restringido a administradores. Utiliza Route Model Binding para inyectar
-     * automáticamente la instancia del modelo `Editoriales` correspondiente al ID en la URL.
+     * Restringido a administradores. Verifica si el usuario autenticado es administrador.
+     * Si no lo es, redirige a 'profile.entry'. Si está autorizado, utiliza la instancia
+     * del modelo `Editoriales` (`$editoriales`) inyectada automáticamente por Laravel mediante
+     * Route Model Binding (basado en el ID de la URL). Pasa esta instancia a la vista
+     * 'admin.editoriales.show' usando `compact()`.
      *
      * @param Editoriales $editoriales Instancia del modelo Editoriales inyectada por Laravel
      *                                 basada en el parámetro de ruta (ej. /admin/editoriales/{editorial}).
@@ -131,7 +146,7 @@ class EditorialesController extends Controller
      */
     public function show(Editoriales $editoriales): View|RedirectResponse
     {
-        // 1. Autorización: Verificar rol de administrador.
+        // 1. Autorización: Verifica rol de administrador.
         if (Auth::user()->rol !== 'administrador') {
             return redirect()->route('profile.entry')->with('error', 'Acceso no autorizado.');
         }
@@ -145,8 +160,11 @@ class EditorialesController extends Controller
     /**
      * Muestra el formulario para editar una editorial existente.
      *
-     * Restringido a administradores. Utiliza Route Model Binding para obtener
-     * la instancia de la editorial a editar.
+     * Restringido a administradores. Verifica si el usuario es administrador; si no, redirige
+     * al índice de editoriales del admin. Si está autorizado, utiliza la instancia del modelo
+     * `Editoriales` (`$editoriales`) inyectada por Route Model Binding. Pasa esta instancia a la
+     * vista 'admin.editoriales.edit'. El formulario en la vista utilizará los datos del objeto
+     * `$editoriales` para rellenar los campos existentes.
      *
      * @param Editoriales $editoriales Instancia del modelo Editoriales a editar, inyectada por Laravel.
      *                                 Se mantiene el nombre plural `$editoriales`.
@@ -154,7 +172,7 @@ class EditorialesController extends Controller
      */
     public function edit(Editoriales $editoriales): View|RedirectResponse
     {
-        // 1. Autorización: Verificar rol de administrador.
+        // 1. Autorización: Verifica rol de administrador.
         if (Auth::user()->rol !== 'administrador') {
             return redirect()->route('admin.editoriales.index')->with('error', 'No tienes permiso para editar editoriales.');
         }
@@ -169,9 +187,15 @@ class EditorialesController extends Controller
     /**
      * Actualiza una editorial existente en la base de datos.
      *
-     * Restringido a administradores. Valida los datos recibidos, asegurando que el
-     * nombre sea único excepto para la editorial actual que se está editando.
-     * Actualiza el registro y redirige con mensajes de éxito o error.
+     * Restringido a administradores. Verifica la autorización; si falla, usa `abort(403)`.
+     * Valida los datos de la solicitud (`$request->validate()`). La regla 'unique' para el
+     * campo 'nombre' se ajusta usando `Rule::unique()->ignore($editoriales->id)` para asegurar
+     * que el nombre sea único, pero ignorando el registro de la editorial que se está actualizando.
+     * Si la validación es correcta, intenta actualizar la editorial usando el método `update()`
+     * sobre la instancia `$editoriales` inyectada, pasándole `$request->all()`. Esto ocurre
+     * dentro de un bloque try-catch. En caso de éxito, redirige al índice de editoriales del admin
+     * con un mensaje de éxito. Si falla, registra el error y redirige de vuelta al formulario
+     * de edición con un mensaje de error y los datos introducidos.
      *
      * @param Request $request Datos de la solicitud HTTP (formulario de edición).
      * @param Editoriales $editoriales Instancia de la editorial a actualizar (Route Model Binding).
@@ -180,7 +204,7 @@ class EditorialesController extends Controller
      */
     public function update(Request $request, Editoriales $editoriales): RedirectResponse
     {
-        // 1. Autorización: Verificar rol de administrador.
+        // 1. Autorización: Verifica rol de administrador.
         if (Auth::user()->rol !== 'administrador') {
             abort(403, 'Acción no autorizada.');
         }
@@ -198,7 +222,7 @@ class EditorialesController extends Controller
             'pais'   => 'required|string|max:255' // País sigue siendo obligatorio.
         ]);
 
-        // 3. Actualización del Recurso: Intentar actualizar la editorial.
+        // 3. Actualización del Recurso: Intenta actualizar la editorial.
         try {
             // Se utiliza el método `update()` sobre la instancia del modelo `$editoriales`.
             // Se le pasa `$request->all()` con los datos validados.
@@ -220,9 +244,17 @@ class EditorialesController extends Controller
     /**
      * Elimina una editorial específica de la base de datos.
      *
-     * Restringido a administradores. Incluye una verificación previa para
-     * impedir la eliminación si la editorial tiene libros asociados, manteniendo
-     * la integridad referencial.
+     * Restringido a administradores. Verifica la autorización; si falla, usa `abort(403)`.
+     * Dentro de un bloque try-catch, primero realiza una verificación de lógica de negocio:
+     * comprueba si la editorial tiene libros asociados llamando a la relación `libros()` y
+     * contando los resultados (`$editoriales->libros()->count() > 0`). Si tiene libros asociados,
+     * redirige al índice de editoriales del admin con un mensaje de error específico para prevenir
+     * la eliminación y mantener la integridad referencial. Si no tiene libros asociados,
+     * procede a eliminar la editorial usando `$editoriales->delete()`. Si la eliminación es exitosa,
+     * redirige al índice con un mensaje de éxito. Si ocurre una `QueryException` (por ejemplo,
+     * por otras restricciones de base de datos), se captura específicamente, se registra el error
+     * y se redirige con un mensaje de error de BD. Cualquier otra excepción genérica también
+     * se captura, se registra y se redirige con un mensaje de error genérico.
      *
      * @param Editoriales $editoriales Instancia de la editorial a eliminar (Route Model Binding).
      *                                 Se mantiene el nombre plural `$editoriales`.
@@ -230,7 +262,7 @@ class EditorialesController extends Controller
      */
     public function destroy(Editoriales $editoriales): RedirectResponse
     {
-        // 1. Autorización: Verificar rol de administrador.
+        // 1. Autorización: Verifica rol de administrador.
         if (Auth::user()->rol !== 'administrador') {
             abort(403, 'Acción no autorizada.');
         }

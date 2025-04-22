@@ -29,16 +29,20 @@ class ComentariosController extends Controller
      * Almacena un nuevo comentario (y puntuación) en la base de datos.
      *
      * Este método se llama típicamente desde el formulario en la vista de detalle de un libro (libros.show).
-     * Valida los datos recibidos (texto del comentario y puntuación opcional).
-     * Asocia el comentario con el libro y el usuario autenticado.
-     * Maneja errores durante la creación y redirige de vuelta al libro con un mensaje.
+     * Valida los datos recibidos (`libro_id`, `texto`, `puntuacion`) usando `$request->validate()`.
+     * Verifica que el usuario esté autenticado usando `Auth::id()`. Si no lo está, redirige hacia atrás.
+     * Prepara un array `$dataToCreate` con los datos validados y el `user_id` del usuario autenticado,
+     * mapeando `texto` a `comentario` y usando el operador `??` para `puntuacion`.
+     * Intenta crear el registro en la tabla `comentarios` usando `Comentarios::create()` dentro de un bloque try-catch.
+     * Si ocurre una excepción, la registra usando `Log::error()` y redirige hacia atrás con un mensaje de error y los datos introducidos.
+     * Si la creación es exitosa, redirige a la vista del libro (`libros.show`) con un mensaje de éxito.
      *
      * @param  \Illuminate\Http\Request  $request Objeto con los datos del formulario (libro_id, texto, puntuacion).
      * @return \Illuminate\Http\RedirectResponse Redirige de vuelta a la página del libro o al formulario si hay error.
      */
     public function store(Request $request): RedirectResponse
     {
-        // 1. Validación de Datos: Asegurar que los datos del formulario son válidos.
+        // 1. Validación de Datos: Asegura que los datos del formulario son válidos.
         // Se usa el método validate() que lanza una excepción si la validación falla.
         $validated = $request->validate([
             'libro_id'   => 'required|exists:libros,id', // El libro debe existir en la tabla 'libros'.
@@ -46,7 +50,7 @@ class ComentariosController extends Controller
             'puntuacion' => 'nullable|integer|min:1|max:5', // La puntuación es opcional (nullable), debe ser un entero entre 1 y 5.
         ]);
 
-        // 2. Obtención del Usuario Autenticado: Verificar que el usuario está logueado.
+        // 2. Obtención del Usuario Autenticado: Verifica que el usuario está logueado.
         $userId = Auth::id(); // Obtiene el ID del usuario actualmente autenticado.
         if (!$userId) {
             // Aunque la vista debería prevenir esto, es una capa extra de seguridad.
@@ -54,7 +58,7 @@ class ComentariosController extends Controller
             return back()->with('error', 'Debes iniciar sesión para comentar.')->withInput();
         }
 
-        // 3. Preparación de Datos para la Creación: Crear un array con los datos a guardar.
+        // 3. Preparación de Datos para la Creación: Crea un array con los datos a guardar.
         $dataToCreate = [
             'libro_id'   => $validated['libro_id'], // ID del libro validado.
             'user_id'    => $userId, // ID del usuario autenticado.
@@ -64,7 +68,7 @@ class ComentariosController extends Controller
             'puntuacion' => $validated['puntuacion'] ?? null,
         ];
 
-        // 4. Intento de Creación en Base de Datos: Guardar el nuevo comentario.
+        // 4. Intento de Creación en Base de Datos: Guarda el nuevo comentario.
         try {
             // Se utiliza el método estático `create` del modelo Comentarios.
             // Requiere que los campos en $dataToCreate estén definidos como 'fillable' en el modelo Comentarios.
@@ -92,9 +96,12 @@ class ComentariosController extends Controller
     /**
      * Muestra el formulario para editar un comentario específico.
      *
-     * Utiliza Route Model Binding para obtener la instancia del comentario a editar.
-     * Verifica que el usuario autenticado sea el propietario del comentario o un administrador.
-     * Carga opcionalmente la relación con el libro para mostrar información en la vista.
+     * Utiliza Route Model Binding para obtener la instancia del comentario (`$comentarios`) a editar.
+     * Verifica la autorización: el usuario autenticado debe ser el propietario (`Auth::id() === $comentarios->user_id`)
+     * o tener el rol 'administrador' (`Auth::user()->rol === 'administrador'`). Si no está autorizado,
+     * redirige a 'profile.show' con un error.
+     * Carga la relación 'libro' del comentario usando `load()` para tener disponible la información del libro en la vista.
+     * Renderiza la vista 'comentarios.edit', pasándole la instancia del comentario.
      *
      * @param  \App\Models\Comentarios  $comentarios Instancia del modelo Comentarios inyectada por Laravel
      *                                             basada en el parámetro de ruta (ej. /comentarios/{comentario}/edit).
@@ -102,7 +109,7 @@ class ComentariosController extends Controller
      */
     public function edit(Comentarios $comentarios): View|RedirectResponse
     {
-        // 1. Autorización: Verificar permisos de edición.
+        // 1. Autorización: Verifica permisos de edición.
         // El usuario debe ser el dueño del comentario (Auth::id() === $comentarios->user_id)
         // O debe tener el rol de 'administrador'.
         if (Auth::id() !== $comentarios->user_id && Auth::user()->rol !== 'administrador') {
@@ -110,7 +117,7 @@ class ComentariosController extends Controller
              return redirect()->route('profile.show')->with('error', 'No tienes permiso para editar este comentario.');
         }
 
-        // 2. Carga Opcional de Relación: Cargar el libro asociado al comentario.
+        // 2. Carga Opcional de Relación: Carga el libro asociado al comentario.
         // `load()` carga la relación si no ha sido cargada previamente. Útil si la vista de edición
         // necesita mostrar, por ejemplo, el título del libro que se está comentando.
         $comentarios->load('libro');
@@ -126,11 +133,13 @@ class ComentariosController extends Controller
     /**
      * Actualiza un comentario existente en la base de datos.
      *
-     * Utiliza Route Model Binding para obtener la instancia del comentario a actualizar.
-     * Verifica la autorización (dueño o administrador).
-     * Valida los datos recibidos del formulario de edición (texto y puntuación).
-     * Actualiza el registro en la base de datos y maneja posibles errores.
-     * Redirige de vuelta a la página del libro con un mensaje.
+     * Utiliza Route Model Binding para obtener la instancia del comentario (`$comentarios`) a actualizar.
+     * Verifica la autorización (dueño o administrador) usando la misma lógica que en `edit()`. Si no está autorizado, usa `abort(403)`.
+     * Valida los datos recibidos del formulario (`texto`, `puntuacion`) usando `$request->validate()`.
+     * Prepara un array `$dataToUpdate` con los datos validados, mapeando `texto` a `comentario`.
+     * Intenta actualizar el registro usando `$comentarios->update()` dentro de un bloque try-catch.
+     * Si ocurre una excepción, la registra y redirige hacia atrás con error y datos introducidos.
+     * Si la actualización es exitosa, redirige a la vista del libro asociado (`libros.show`) con un mensaje de éxito.
      *
      * @param  \Illuminate\Http\Request  $request Datos enviados desde el formulario de edición.
      * @param  \App\Models\Comentarios  $comentarios Instancia del comentario a actualizar (Route Model Binding).
@@ -144,13 +153,13 @@ class ComentariosController extends Controller
              abort(403, 'No tienes permiso para editar este comentario.');
          }
 
-         // 2. Validación de Datos: Asegurar que los datos del formulario de edición son válidos.
+         // 2. Validación de Datos: Asegura que los datos del formulario de edición son válidos.
          $validated = $request->validate([
              'texto'      => 'required|string|max:1000', // Texto del comentario.
              'puntuacion' => 'nullable|integer|min:1|max:5', // Puntuación opcional.
          ]);
 
-         // 3. Preparación de Datos para Actualizar: Crear array con los datos a modificar.
+         // 3. Preparación de Datos para Actualizar: Crea array con los datos a modificar.
          $dataToUpdate = [
              'comentario' => $validated['texto'], // Mapea 'texto' a 'comentario'.
              'puntuacion' => $validated['puntuacion'] ?? null, // Asigna puntuación o null.
@@ -182,10 +191,12 @@ class ComentariosController extends Controller
     /**
      * Elimina un comentario específico de la base de datos.
      *
-     * Utiliza Route Model Binding para obtener la instancia del comentario a eliminar.
-     * Verifica la autorización (dueño o administrador).
-     * Elimina el registro y maneja posibles errores.
-     * Redirige de vuelta a la página del libro con un mensaje.
+     * Utiliza Route Model Binding para obtener la instancia del comentario (`$comentarios`) a eliminar.
+     * Guarda el `libro_id` para la redirección posterior.
+     * Verifica la autorización (dueño o administrador) usando la misma lógica que en `edit()` y `update()`. Si no está autorizado, usa `abort(403)`.
+     * Intenta eliminar el registro usando `$comentarios->delete()` dentro de un bloque try-catch.
+     * Si ocurre una excepción, la registra y redirige hacia atrás con un mensaje de error.
+     * Si la eliminación es exitosa, redirige a la vista del libro (`libros.show`) usando el `libroId` guardado, con un mensaje de éxito.
      *
      * @param  \App\Models\Comentarios  $comentarios Instancia del comentario a eliminar
      * @return \Illuminate\Http\RedirectResponse Redirige a la vista del libro o de vuelta si hay error.

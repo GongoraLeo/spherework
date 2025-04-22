@@ -29,16 +29,22 @@ class DetallespedidosController extends Controller
     /**
      * Muestra el contenido del carrito de compras actual del usuario autenticado.
      *
-     * Busca el pedido con estado 'pendiente' asociado al usuario. Si existe,
-     * recupera los detalles (ítems) de ese pedido, incluyendo la información
-     * de los libros asociados mediante Eager Loading. Calcula el total del carrito.
-     * Renderiza la vista del carrito ('detallespedidos.index').
+     * Primero, verifica si el usuario está autenticado usando `Auth::check()`. Si no lo está,
+     * redirige a la ruta de login. Si está autenticado, obtiene el usuario y busca su pedido
+     * con estado 'pendiente' (`Pedidos::STATUS_PENDIENTE`) usando `Pedidos::where(...)->first()`.
+     * Si encuentra un pedido pendiente, recupera los detalles (ítems) asociados a ese pedido
+     * (`Detallespedidos::where(...)`) utilizando Eager Loading (`with(['libro.autor', 'libro.editorial'])`)
+     * para cargar eficientemente la información del libro, autor y editorial relacionados.
+     * Luego, calcula el total del carrito sumando el producto de precio y cantidad para cada detalle,
+     * realizando una verificación para asegurar que precio y cantidad sean numéricos.
+     * Finalmente, renderiza la vista 'detallespedidos.index', pasándole la colección de detalles
+     * (o una colección vacía si no hay pedido pendiente) y el total calculado.
      *
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista del carrito o redirige al login si no está autenticado.
      */
     public function index(): View|RedirectResponse
     {
-        // 1. Autorización: Verificar si el usuario está autenticado.
+        // 1. Autorización: Verifica si el usuario está autenticado.
         // Es crucial para asegurar que solo usuarios logueados accedan a su carrito.
         if (!Auth::check()) {
             // Si no está logueado, redirige a la página de login con un mensaje de error.
@@ -69,7 +75,7 @@ class DetallespedidosController extends Controller
             // Se utiliza el método `sum()` de la colección de detalles.
             // La función anónima calcula el subtotal para cada ítem (detalle).
             $total = $detallespedidos->sum(function ($detalle) {
-                // Verificación defensiva: asegura que precio y cantidad sean numéricos.
+                // Verificación defensiva: asegura que precio y cantidad sean numéricos antes de multiplicar.
                 $price = is_numeric($detalle->precio) ? $detalle->precio : 0;
                 $quantity = is_numeric($detalle->cantidad) ? $detalle->cantidad : 0;
                 return $price * $quantity; // Calcula subtotal: precio * cantidad.
@@ -85,11 +91,12 @@ class DetallespedidosController extends Controller
     /**
      * Muestra el formulario para crear un nuevo recurso.
      *
-     * Este método no es aplicable para el carrito, ya que los ítems se añaden
-     * desde la vista del catálogo de libros (usando el método store).
-     * Redirige al índice de libros con un mensaje informativo.
+     * Este método no es aplicable para la lógica del carrito de compras, ya que los ítems
+     * (Detallespedidos) se añaden implícitamente a través del método `store` al interactuar
+     * con el catálogo de libros. Por lo tanto, redirige al índice de libros (`libros.index`)
+     * con un mensaje informativo para guiar al usuario sobre cómo añadir ítems.
      *
-     * @return \Illuminate\Http\RedirectResponse Siempre redirige.
+     * @return \Illuminate\Http\RedirectResponse Siempre redirige a la lista de libros.
      */
     public function create(): RedirectResponse
     {
@@ -101,13 +108,21 @@ class DetallespedidosController extends Controller
     /**
      * Almacena un nuevo ítem (Detallespedidos) en el carrito del usuario.
      *
-     * Este método se llama al enviar el formulario "Añadir al Carrito" desde la vista de un libro.
-     * Valida los datos recibidos (ID del libro, cantidad, precio).
-     * Verifica que el usuario esté autenticado.
-     * Busca o crea un pedido con estado 'pendiente' para el usuario, asignando `cliente_id`.
-     * Comprueba si el libro ya existe en el carrito pendiente; si es así, actualiza la cantidad.
-     * Si no existe, crea un nuevo registro en `Detallespedidos`.
-     * Finalmente, redirige al usuario a la vista del carrito.
+     * Este método se invoca al enviar el formulario "Añadir al Carrito" desde la vista de un libro.
+     * Primero, valida los datos recibidos (`libro_id`, `cantidad`, `precio`) usando `$request->validate()`.
+     * Luego, verifica si el usuario está autenticado (`Auth::check()`); si no, redirige al login.
+     * Utiliza `Pedidos::firstOrCreate()` para buscar un pedido pendiente existente para el usuario
+     * o crear uno nuevo si no existe, asociándolo al `cliente_id` del usuario y estableciendo
+     * el estado a `Pedidos::STATUS_PENDIENTE`. Se incluye un try-catch para manejar errores
+     * durante esta operación.
+     * A continuación, busca si ya existe un detalle (`Detallespedidos`) para el mismo libro
+     * dentro del pedido pendiente encontrado o creado.
+     * Si el detalle ya existe (`$detalleExistente`), incrementa su cantidad sumando la nueva cantidad
+     * recibida y guarda el cambio. Se decidió mantener el precio original con el que se añadió.
+     * Si el detalle no existe, crea un nuevo registro `Detallespedidos` con los datos del libro,
+     * cantidad, precio (tomado del request) y el ID del pedido pendiente.
+     * Finalmente, redirige al usuario a la vista del carrito (`detallespedidos.index`) con un
+     * mensaje de éxito indicando si el libro fue añadido o su cantidad actualizada.
      *
      * @param  \Illuminate\Http\Request  $request Objeto con los datos del formulario (libro_id, cantidad, precio).
      * @return \Illuminate\Http\RedirectResponse Redirige a la vista del carrito o a login/atrás si hay errores.
@@ -122,7 +137,7 @@ class DetallespedidosController extends Controller
             'precio'   => 'required|numeric|min:0',   // El precio debe ser numérico y no negativo.
         ]);
 
-        // 2. Autorización: Verificar si el usuario está autenticado.
+        // 2. Autorización: Verifica si el usuario está autenticado.
         if (!Auth::check()) {
             // Si no está autenticado, registra una advertencia y redirige al login.
             Log::warning("Intento de añadir al carrito sin autenticar.");
@@ -132,9 +147,8 @@ class DetallespedidosController extends Controller
         $user = Auth::user();
 
         // 3. Buscar o Crear Pedido Pendiente:
-        // `firstOrCreate` es un método Eloquent que busca un registro que coincida
-        // con el primer array de condiciones. Si no lo encuentra, crea uno nuevo
-        // usando los datos del primer array y, opcionalmente, los del segundo.
+        // `firstOrCreate` busca un registro que coincida con el primer array.
+        // Si no lo encuentra, crea uno nuevo usando los datos del primer array y opcionalmente los del segundo.
         try {
             $pedidoPendiente = Pedidos::firstOrCreate(
                 [
@@ -143,7 +157,7 @@ class DetallespedidosController extends Controller
                 ],
                 [
                     // Valores que se usarán SOLO si se CREA un nuevo pedido.
-                    // 'total' => 0, // El total se recalcula al finalizar, no es necesario aquí.
+                    // 'total' => 0, // El total se recalcula al finalizar o al mostrar el carrito.
                 ]
             );
         } catch (\Exception $e) {
@@ -166,7 +180,7 @@ class DetallespedidosController extends Controller
             // Se suma la nueva cantidad (`$request->cantidad`) a la cantidad existente.
             $detalleExistente->cantidad += $request->cantidad;
             // Nota: Se decide no actualizar el precio aquí, manteniendo el precio original
-            // con el que se añadió el ítem por primera vez.
+            // con el que se añadió el ítem por primera vez para consistencia.
             $detalleExistente->save(); // Guarda los cambios en el registro del detalle existente.
             $message = 'Cantidad actualizada en el carrito.'; // Mensaje de éxito para el usuario.
         } else {
@@ -191,12 +205,12 @@ class DetallespedidosController extends Controller
     /**
      * Muestra un recurso específico (Detallespedidos).
      *
-     * Este método no se utiliza en la lógica actual del carrito, ya que los detalles
-     * se ven en conjunto en la vista del carrito (index).
-     * Redirige directamente al índice del carrito.
+     * Este método no es relevante para la funcionalidad del carrito, donde todos los ítems
+     * se visualizan juntos en la vista `index`. Por convención de recursos RESTful,
+     * existe, pero simplemente redirige al usuario a la vista principal del carrito.
      *
-     * @param  \App\Models\Detallespedidos  $detallespedidos Instancia inyectada (Route Model Binding).
-     * @return \Illuminate\Http\RedirectResponse Siempre redirige.
+     * @param  \App\Models\Detallespedidos  $detallespedidos Instancia inyectada por Route Model Binding (no utilizada).
+     * @return \Illuminate\Http\RedirectResponse Siempre redirige al índice del carrito.
      */
     public function show(Detallespedidos $detallespedidos): RedirectResponse
     {
@@ -207,12 +221,13 @@ class DetallespedidosController extends Controller
     /**
      * Muestra el formulario para editar un recurso específico (Detallespedidos).
      *
-     * Este método no se utiliza en la lógica actual del carrito. La edición de la cantidad
-     * se maneja directamente desde la vista del carrito (index) a través del método `update`.
-     * Redirige directamente al índice del carrito.
+     * Este método no se utiliza en la implementación actual del carrito. La edición
+     * (específicamente, la actualización de la cantidad) se realiza directamente
+     * desde la vista `index` mediante el método `update`. Por lo tanto, esta ruta
+     * simplemente redirige al índice del carrito.
      *
-     * @param  \App\Models\Detallespedidos  $detallespedidos Instancia inyectada (Route Model Binding).
-     * @return \Illuminate\Http\RedirectResponse Siempre redirige.
+     * @param  \App\Models\Detallespedidos  $detallespedidos Instancia inyectada por Route Model Binding (no utilizada).
+     * @return \Illuminate\Http\RedirectResponse Siempre redirige al índice del carrito.
      */
     public function edit(Detallespedidos $detallespedidos): RedirectResponse
     {
@@ -223,11 +238,18 @@ class DetallespedidosController extends Controller
     /**
      * Actualiza la cantidad de un ítem específico en el carrito.
      *
-     * Se llama típicamente desde un formulario en la vista del carrito (detallespedidos.index).
-     * Valida la nueva cantidad recibida.
-     * Realiza una comprobación de autorización estricta: el usuario debe estar logueado
-     * y el ítem (`Detallespedidos`) debe pertenecer a un pedido pendiente de ese usuario.
-     * Actualiza la cantidad del ítem en la base de datos y redirige de vuelta al carrito.
+     * Se invoca típicamente desde un formulario en la vista del carrito (`detallespedidos.index`).
+     * Valida que la `cantidad` recibida sea un entero positivo.
+     * Verifica que el usuario esté autenticado (`Auth::check()`).
+     * Realiza una comprobación de autorización crucial: utiliza `loadMissing('pedido')` para
+     * cargar la relación con el pedido asociado al detalle (si no está ya cargada) y luego
+     * verifica que este pedido exista, pertenezca al usuario autenticado (`cliente_id`) y
+     * tenga el estado 'pendiente' (`Pedidos::STATUS_PENDIENTE`). Si alguna de estas condiciones
+     * no se cumple, registra una advertencia y redirige con un error, previniendo modificaciones
+     * no autorizadas.
+     * Si la autorización es correcta, actualiza el atributo `cantidad` del modelo `$detallespedidos`
+     * con el valor validado y guarda los cambios usando `save()`.
+     * Finalmente, redirige de vuelta a la vista del carrito (`detallespedidos.index`) con un mensaje de éxito.
      *
      * @param  \Illuminate\Http\Request  $request Objeto con la nueva cantidad.
      * @param  \App\Models\Detallespedidos  $detallespedidos Instancia del ítem a actualizar (Route Model Binding).
@@ -240,14 +262,14 @@ class DetallespedidosController extends Controller
             'cantidad' => 'required|integer|min:1', // La nueva cantidad debe ser un entero positivo.
         ]);
 
-        // 2. Autorización: Verificar autenticación y propiedad del ítem/pedido.
+        // 2. Autorización: Verifica autenticación.
         if (!Auth::check()) {
              // Redirige al login si no está autenticado.
              return redirect()->route('login')->with('error', 'Debes iniciar sesión para modificar tu carrito.');
         }
         $user = Auth::user(); // Obtiene el usuario autenticado.
 
-        // Carga la relación 'pedido' del detalle si aún no está cargada.
+        // Carga la relación 'pedido' del detalle si aún no está cargada para la verificación.
         // `loadMissing` es eficiente, solo carga si no se ha cargado previamente.
         $detallespedidos->loadMissing('pedido');
         $pedidoDelDetalle = $detallespedidos->pedido; // Accede a la relación cargada.
@@ -277,29 +299,33 @@ class DetallespedidosController extends Controller
     /**
      * Elimina un ítem específico (Detallespedidos) del carrito.
      *
-     * Se llama típicamente desde un botón/formulario en la vista del carrito.
-     * Realiza una comprobación de autorización estricta similar a `update()` para asegurar
-     * que el usuario solo pueda eliminar ítems de su propio carrito pendiente.
-     * Elimina el registro `Detallespedidos` de la base de datos.
-     * Redirige de vuelta al carrito con un mensaje.
+     * Se invoca típicamente desde un botón o formulario en la vista del carrito (`detallespedidos.index`).
+     * Verifica que el usuario esté autenticado (`Auth::check()`).
+     * Realiza la misma comprobación de autorización estricta que en `update()`: carga la relación
+     * con el pedido (`loadMissing('pedido')`) y verifica que el pedido exista, pertenezca al
+     * usuario autenticado (`cliente_id`) y esté en estado 'pendiente' (`Pedidos::STATUS_PENDIENTE`).
+     * Si la autorización falla, registra una advertencia y redirige con error.
+     * Si la autorización es correcta, elimina el registro `Detallespedidos` de la base de datos
+     * usando el método `delete()` sobre la instancia inyectada por Route Model Binding.
+     * Finalmente, redirige de vuelta a la vista del carrito (`detallespedidos.index`) con un mensaje de éxito.
      *
      * @param  \App\Models\Detallespedidos  $detallespedidos Instancia del ítem a eliminar (Route Model Binding).
      * @return \Illuminate\Http\RedirectResponse Redirige al índice del carrito o a login/atrás si hay error.
      */
     public function destroy(Detallespedidos $detallespedidos): RedirectResponse
     {
-         // 1. Autorización: Verificar autenticación y propiedad del ítem/pedido.
+         // 1. Autorización: Verifica autenticación.
         if (!Auth::check()) {
              return redirect()->route('login')->with('error', 'Debes iniciar sesión para modificar tu carrito.');
         }
         $user = Auth::user(); // Obtiene el usuario autenticado.
 
-        // Carga la relación 'pedido' si es necesario para la verificación.
+        // Carga la relación 'pedido' si es necesario para la verificación de propiedad y estado.
         $detallespedidos->loadMissing('pedido');
         $pedidoDelDetalle = $detallespedidos->pedido; // Accede a la relación.
 
         // 2. Comprobación de Propiedad y Estado:
-        // Misma verificación crucial que en update().
+        // Misma verificación crucial que en update() para asegurar que solo se borren ítems del carrito pendiente del usuario.
         if (!$pedidoDelDetalle || $pedidoDelDetalle->cliente_id !== $user->id || $pedidoDelDetalle->status !== Pedidos::STATUS_PENDIENTE) {
              Log::warning("Intento no autorizado de eliminar detalle ID {$detallespedidos->id} por usuario ID {$user->id}");
              return redirect()->route('detallespedidos.index')->with('error', 'No se pudo eliminar el item.');
