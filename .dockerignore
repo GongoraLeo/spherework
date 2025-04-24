@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+docker/
+
+# Laravel / PHP
+vendor/
+node_modules/
+public/storage # Los archivos subidos deben ir a un disco persistente en Render
+storage/*.key
+storage/framework/sessions/*
+storage/framework/cache/data/*
+storage/logs/*.log
+.env # ¡MUY IMPORTANTE! Nunca incluyas tu .env en la imagen
+.env.example # Opcional, pero no necesario en la imagen final
+phpunit.xml
+Homestead.yaml
+Homestead.json
+
+# Node / NPM / Yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# IDE / OS files
+.idea/
+.vscode/
+*.iml
+*.sublime-*
+.DS_Store
+Thumbs.db
