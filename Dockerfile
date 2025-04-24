@@ -32,24 +32,8 @@ RUN composer install --no-interaction --no-progress --no-dev --optimize-autoload
 
 
 # === Stage 4: Final Production Image ===
-# Empieza desde la imagen base de PHP+Apache
-FROM spherework_base AS spherework_prod
-WORKDIR /var/www/html
+# ... (resto de la etapa) ...
 
-# Copia las dependencias de Composer instaladas desde la etapa composer_builder
-COPY --from=composer_builder /var/www/html/vendor /var/www/html/vendor
-
-# Copia el código de la aplicación
-COPY . .
-
-# Copia los assets compilados desde la etapa frontend_builder
-COPY --from=frontend_builder /app/public/build /var/www/html/public/build
-COPY --from=frontend_builder /app/public/build/manifest.json /var/www/html/public/build/manifest.json
-
-# Copia la configuración de Apache
-COPY ./docker/vhost.conf /etc/apache2/sites-available/000-default.conf
-
-# --- ¡ASEGÚRATE DE QUE ESTAS LÍNEAS ESTÉN AQUÍ! ---
 # Establece permisos correctos DESPUÉS de copiar todo
 # Crea directorios si no existen (importante si .dockerignore los excluye)
 RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache \
@@ -57,9 +41,8 @@ RUN mkdir -p storage/framework/sessions storage/framework/views storage/framewor
     && chmod -R ug+rwx storage bootstrap/cache
 
 # Ejecuta optimizaciones de Laravel DESPUÉS de tener todo el código y assets
-# Forzar CACHE_DRIVER a 'file' para evitar errores de DB durante el build
-RUN CACHE_DRIVER=file php artisan optimize:clear \
-    && php artisan config:cache \
+# --- CAMBIO: Eliminado 'optimize:clear'. Solo generamos las cachés. ---
+RUN php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache
 # --- FIN DE LAS LÍNEAS QUE DEBEN ESTAR AQUÍ ---
