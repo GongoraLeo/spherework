@@ -7,7 +7,6 @@
 Dockerfile
 docker-compose.yml
 .dockerignore
-docker/
 
 # Laravel / PHP
 vendor/
@@ -27,7 +26,6 @@ Homestead.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
 yarn.lock
 
 # IDE / OS files
