@@ -39,7 +39,7 @@ class AutoresController extends Controller
         // 1. Autorización: Verifica si el usuario actual es administrador.
         // Se accede al usuario autenticado y se comprueba su atributo 'rol'.
         if (Auth::user()->rol !== 'administrador') {
-            // Si no es admin, redirige a la ruta de entrada del perfil con un mensaje flash de error.
+            // Si no es admin, redirige a la ruta de entrada del perfil con un mensaje de error.
             // Se eligió 'profile.entry' como punto centralizado de redirección según rol.
             return redirect()->route('profile.entry')->with('error', 'Acceso no autorizado.');
         }
@@ -275,7 +275,6 @@ class AutoresController extends Controller
 
         // 2. Verificación Previa (Lógica de Negocio): Impedir borrado si tiene dependencias.
         try {
-            // Se asume que existe una relación `libros()` definida en el modelo `Autores`.
             // Se cuenta cuántos libros están asociados a este autor.
             // Esta es una medida de seguridad importante para mantener la integridad referencial.
             if ($autores->libros()->count() > 0) {

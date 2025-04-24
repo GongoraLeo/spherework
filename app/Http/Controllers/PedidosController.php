@@ -185,7 +185,6 @@ class PedidosController extends Controller
      * Renderiza la vista 'pedidos.edit', pasándole el pedido y el mapa de estados.
      *
      * @param  \App\Models\Pedidos $pedidos Instancia del pedido a editar (Route Model Binding).
-     *                                     Se mantiene el nombre plural `$pedidos`.
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retorna la vista 'pedidos.edit' o redirige si no es admin.
      */
     public function edit(Pedidos $pedidos): View|RedirectResponse
@@ -218,7 +217,6 @@ class PedidosController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request Datos del formulario de edición.
      * @param  \App\Models\Pedidos $pedidos Instancia del pedido a actualizar (Route Model Binding).
-     *                                     Se mantiene el nombre plural `$pedidos`.
      * @return \Illuminate\Http\RedirectResponse Redirige al índice de pedidos o de vuelta si hay error.
      */
     public function update(Request $request, Pedidos $pedidos): RedirectResponse
@@ -234,7 +232,6 @@ class PedidosController extends Controller
             'status' => ['required', Rule::in(array_keys(self::getStatusMap()))],
             'total' => 'nullable|numeric|min:0', // Permite actualizar el total si es necesario.
             'fecha_pedido' => 'nullable|date', // Permite actualizar la fecha si es necesario.
-            // Nota: No se valida ni permite actualizar 'cliente_id' aquí por seguridad/lógica.
         ]);
 
         // 3. Actualización del Pedido:
@@ -246,7 +243,6 @@ class PedidosController extends Controller
 
             // 4. Redirección Éxito:
             // Redirige al índice de pedidos del admin con mensaje de éxito.
-            // Alternativa: redirigir a la vista show del pedido actualizado: route('pedidos.show', $pedidos).
             return redirect()->route('pedidos.index')
                 ->with('success', 'Pedido actualizado correctamente.');
         } catch (\Exception $e) {
@@ -273,9 +269,8 @@ class PedidosController extends Controller
      * 4. Actualiza el pedido pendiente: establece el `status` a `Pedidos::STATUS_COMPLETADO`,
      *    asigna el `$totalFinal` calculado, establece la `fecha_pedido` a la hora actual (`now()`)
      *    y guarda los cambios (`save()`).
-     * 5. (Punto de integración comentado para pasarela de pago: si falla, lanzar excepción).
-     * 6. Confirma la transacción (`DB::commit()`) si todo ha ido bien.
-     * 7. Redirige a la ruta de éxito (`pedidos.checkout.success`) pasando el ID del pedido
+     * 5. Confirma la transacción (`DB::commit()`) si todo ha ido bien.
+     * 6. Redirige a la ruta de éxito (`pedidos.checkout.success`) pasando el ID del pedido
      *    y un mensaje de éxito.
      * Captura `ModelNotFoundException` (pedido no encontrado), revierte la transacción y redirige
      * al carrito con un error específico.
@@ -305,7 +300,6 @@ class PedidosController extends Controller
             $pedidoPendiente = Pedidos::where('cliente_id', $user->id)
                 ->where('status', Pedidos::STATUS_PENDIENTE)
                 ->with('detallespedidos') // Carga los detalles para verificar si está vacío y calcular total.
-                // ->lockForUpdate() // Opcional: Bloquea la fila del pedido para evitar modificaciones concurrentes durante la transacción. Útil en sistemas de alta concurrencia.
                 ->firstOrFail(); // Lanza ModelNotFoundException si no se encuentra ningún pedido pendiente.
 
             // 4. Verificar si el Carrito (Pedido Pendiente) está Vacío:
@@ -333,16 +327,6 @@ class PedidosController extends Controller
             $pedidoPendiente->fecha_pedido = now();
             // Guarda los cambios en la base de datos.
             $pedidoPendiente->save();
-
-            // --- Punto de Integración con Pasarela de Pago ---
-            // Aquí iría la lógica para procesar el pago.
-            // Si el pago falla, se debería lanzar una excepción para activar el DB::rollBack().
-            // Ejemplo:
-            // $paymentSuccess = PaymentGateway::process($pedidoPendiente, $request->payment_details);
-            // if (!$paymentSuccess) {
-            //     throw new \Exception('El pago falló.');
-            // }
-            // --- Fin Lógica de Pago ---
 
             // 7. Confirmar Transacción:
             // Si todas las operaciones (actualización de pedido, pago) fueron exitosas,

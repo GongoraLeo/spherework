@@ -10,7 +10,7 @@ use Illuminate\Http\Request; // Objeto para manejar la solicitud HTTP (no se usa
 use Illuminate\Support\Facades\Auth; // Fachada para verificar la autenticación y rol del usuario logueado.
 use Illuminate\View\View;             // Para el type hinting del retorno de vistas.
 use Illuminate\Http\RedirectResponse; // Para el type hinting del retorno de redirecciones.
-use Illuminate\Support\Facades\Log;    // Fachada para registrar información o advertencias.
+use Illuminate\Support\Facades\Log;    // Para registrar información o advertencias.
 
 /**
  * Class ClientesController
