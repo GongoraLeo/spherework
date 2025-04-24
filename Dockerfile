@@ -55,10 +55,20 @@ WORKDIR /var/www/html
 # (Esta etapa instala las dependencias de Composer)
 FROM spherework_base AS composer_builder
 WORKDIR /var/www/html
+
+# --- CAMBIO CLAVE: Copiar todo el código ANTES de composer install ---
+# Copia primero los archivos de dependencias para aprovechar el caché si no cambian
 COPY composer.json composer.lock ./
-RUN composer install --no-interaction --no-progress --no-dev --optimize-autoloader
-# Copiamos el código aquí también para que el autoloader funcione correctamente
+# Copia el resto del código de la aplicación (incluyendo 'artisan') AHORA
 COPY . .
+
+# Ahora ejecuta composer install. Los scripts post-install encontrarán 'artisan'.
+# El --optimize-autoloader también funcionará mejor ahora.
+RUN composer install --no-interaction --no-progress --no-dev --optimize-autoloader
+
+# Ya no necesitamos el segundo 'COPY . .' que estaba después del install en la versión anterior
+# de esta etapa, ya que lo hicimos antes.
+
 
 # === Stage 4: Final Production Image ===
 # Empieza desde la imagen base de PHP+Apache
