@@ -71,24 +71,7 @@ RUN composer install --no-interaction --no-progress --no-dev --optimize-autoload
 
 
 # === Stage 4: Final Production Image ===
-# Empieza desde la imagen base de PHP+Apache
-FROM spherework_base AS spherework_prod
-WORKDIR /var/www/html
-
-# Copia las dependencias de Composer instaladas desde la etapa composer_builder
-COPY --from=composer_builder /var/www/html/vendor /var/www/html/vendor
-
-# Copia el código de la aplicación (asegúrate que .dockerignore excluye vendor/, node_modules/, .git, .env, etc.)
-COPY . .
-
-# --- ¡NUEVO! Copia los assets compilados desde la etapa frontend_builder ---
-# El destino es public/build (directorio estándar de Vite en Laravel)
-COPY --from=frontend_builder /app/public/build /var/www/html/public/build
-# Copia también el manifest si existe (importante para que Laravel encuentre los assets)
-COPY --from=frontend_builder /app/public/build/manifest.json /var/www/html/public/build/manifest.json
-
-# Copia la configuración de Apache (aunque ya está en la base, por si acaso)
-COPY ./docker/vhost.conf /etc/apache2/sites-available/000-default.conf
+# ... (resto de la etapa) ...
 
 # Establece permisos correctos DESPUÉS de copiar todo
 # Crea directorios si no existen (importante si .dockerignore los excluye)
@@ -97,7 +80,9 @@ RUN mkdir -p storage/framework/sessions storage/framework/views storage/framewor
     && chmod -R ug+rwx storage bootstrap/cache
 
 # Ejecuta optimizaciones de Laravel DESPUÉS de tener todo el código y assets
-RUN php artisan optimize:clear \
+# --- CAMBIO: Forzar CACHE_DRIVER a 'file' para evitar errores de DB durante el build ---
+# Esto asegura que no intente usar la conexión 'database' (que por defecto sería sqlite aquí)
+RUN CACHE_DRIVER=file php artisan optimize:clear \
     && php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache
@@ -107,3 +92,4 @@ EXPOSE 80
 
 # Comando por defecto para iniciar Apache (heredado de spherework_base)
 CMD ["apache2-foreground"]
+
