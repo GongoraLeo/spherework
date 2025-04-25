@@ -51,7 +51,7 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
     *   Navega a la carpeta `htdocs` de tu instalación de XAMPP (ej. `cd C:\xampp\htdocs`).
     *   Clona el proyecto 
         ```bash
-        git clone <https://github.com/GongoraLeo/spherework> spherework
+        git clone https://github.com/GongoraLeo/spherework spherework
         ```
     *   Entra en la carpeta del proyecto:
         ```bash
