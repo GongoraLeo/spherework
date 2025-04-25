@@ -82,10 +82,10 @@ RUN mkdir -p storage/framework/sessions storage/framework/views storage/framewor
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwx storage bootstrap/cache
 
-# --- Descomentado: Ejecuta optimizaciones de Laravel ---
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+# --- Comentado: No ejecutar optimizaciones durante el build ---
+# RUN php artisan config:cache \
+#     && php artisan route:cache \
+#     && php artisan view:cache
 # --- Fin de comentarios ---
 
 # Expone el puerto 80 (heredado de spherework_base)
