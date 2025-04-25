@@ -34,6 +34,7 @@ Spherework es una aplicación web desarrollada con el framework Laravel que simu
 *   **Autenticación:** Laravel Breeze (presumiblemente)
 *   **Gestión de Dependencias:** Composer (PHP), npm (JS)
 *   **Servidor Local:** XAMPP (Apache, MySQL, PHP)
+*   **Despliegue:** Railway, Docker
 
 ## 🚀 Guía de Instalación y Configuración Local (Usando XAMPP)
 
@@ -48,7 +49,7 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
 **2. Clonar el Repositorio:**
     *   Abre tu terminal o Git Bash.
     *   Navega a la carpeta `htdocs` de tu instalación de XAMPP (ej. `cd C:\xampp\htdocs`).
-    *   Clona el proyecto:
+    *   Clona el proyecto (reemplaza `<URL_DEL_REPOSITORIO_GITHUB>` con tu URL real):
         ```bash
         git clone <URL_DEL_REPOSITORIO_GITHUB> spherework
         ```
@@ -60,7 +61,7 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
 **3. Instalar Dependencias:**
     *   Instala las dependencias de PHP:
         ```bash
-        composer install
+        composer install --ignore-platform-reqs
         ```
     *   Instala las dependencias de JavaScript:
         ```bash
@@ -80,7 +81,7 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
 
 **5. Configuración de la Base de Datos:**
     *   Abre **phpMyAdmin** (desde el panel de XAMPP o `http://localhost/phpmyadmin`).
-    *   Crea una nueva base de datos (ej. `spherework`) con cotejamiento `utf8mb4_unicode_ci` (puedes hacerlo ejecutando el archivo create_database.sql).
+    *   Crea una nueva base de datos (ej. `spherework`) con cotejamiento `utf8mb4_unicode_ci` (puedes hacerlo ejecutando el archivo `create_database.sql` si existe).
     *   Edita el archivo `.env` en la raíz de tu proyecto y configura las variables de base de datos:
         ```dotenv
         DB_CONNECTION=mysql
@@ -89,14 +90,19 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
         DB_DATABASE=spherework  # Nombre de tu BD
         DB_USERNAME=root        # Usuario de MySQL (por defecto en XAMPP)
         DB_PASSWORD=            # Contraseña de MySQL (vacía por defecto en XAMPP)
+
+        # Asegúrate de que APP_ENV sea 'local' para desarrollo
+        APP_ENV=local
+        APP_DEBUG=true
+        APP_URL=http://localhost:8000 # O la URL que uses localmente
         ```
 
-**6. Migraciones de Base de Datos:**
+**6. Migraciones y Seeders:**
     *   Ejecuta las migraciones para crear la estructura de tablas:
         ```bash
         php artisan migrate
         ```
-    *   *(Opcional)* Si tienes seeders para datos de prueba:
+    *   Ejecuta los seeders para poblar la base de datos con datos iniciales (incluyendo usuarios admin/cliente):
         ```bash
         php artisan db:seed
         ```
@@ -106,9 +112,9 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
         ```bash
         npm run dev
         ```
-        *(Deja esta terminal abierta durante el desarrollo para recompilación automática, o usa `npm run build` para una compilación única para producción).*
+        *(Deja esta terminal abierta durante el desarrollo para recompilación automática, o usa `npm run build` para una compilación única).*
 
-**8. Servir la Aplicación:**
+**8. Servir la Aplicación Localmente:**
     *   Abre **otra** terminal en la carpeta del proyecto.
     *   Inicia el servidor de desarrollo de Laravel:
         ```bash
@@ -116,46 +122,32 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
         ```
     *   Accede a la aplicación en tu navegador, normalmente en: `http://127.0.0.1:8000`
 
-**9. Usuarios:**
+## 🌐 Acceso a la Aplicación Desplegada (Producción)
 
-    Usuarios existentes:
-    Los seeders introducen dos usuarios:
+La aplicación se encuentra desplegada y accesible públicamente en la siguiente URL:
 
-    *   Rol: administrador
-    *   Nombre de usuario: admin
-    *   Email: admin@spherework.com
-    *   Password: adminpassword
-    
-    *   Rol: cliente
-    *   Nombre de usuario: cliente
-    *   Email: cliente@spherework.com
-    *   Password: clientepassword
+**https://spherework-production.up.railway.app**
 
-    Crear Usuario Administrador:
-    *   Ve a la URL de registro de tu aplicación (ej. `http://127.0.0.1:8000/register`) y crea un usuario normal.
-    *   Abre **phpMyAdmin**, selecciona tu base de datos (`spherework`).
-    *   Busca la tabla `users`.
-    *   Encuentra el usuario que acabas de crear y edita su fila.
-    *   Cambia el valor de la columna `rol` a `administrador`.
-    *   Guarda los cambios.
-    *   Ahora puedes iniciar sesión con este usuario para acceder a las funciones de administrador.
+Puedes interactuar con la aplicación directamente en esa dirección.
 
-    Crear Usuario Cliente:
-    *   Registra un nuevo usuario en la aplicacion.
+## 👤 Usuarios de Prueba (Producción y Local)
 
-## 🛠️ Uso
+La base de datos se inicializa con los siguientes usuarios de prueba gracias a los *seeders*:
 
-Una vez instalado y servido (`php artisan serve`), puedes acceder a la aplicación en `http://127.0.0.1:8000`.
-*   Navega por el catálogo como visitante.
-*   Regístrate como cliente para usar el carrito y hacer pedidos.
-*   Inicia sesión con el usuario administrador creado manualmente para acceder al panel de administración y gestionar la tienda.
+*   **Rol:** `administrador`
+    *   **Email:** `admin@spherework.com`
+    *   **Password:** `adminpassword`
+*   **Rol:** `cliente`
+    *   **Email:** `cliente@spherework.com`
+    *   **Password:** `clientepassword`
 
-## ⚙️ Configuración Adicional (.env)
+Puedes usar estas credenciales para iniciar sesión y probar las funcionalidades de cada rol tanto en el entorno local como en la versión desplegada en Railway.
 
-El archivo `.env` contiene variables de entorno importantes. Además de la base de datos, revisa y ajusta si es necesario:
+## ⚙️ Configuración Adicional (.env - Solo Local)
+
+El archivo `.env` se usa principalmente para la configuración del **entorno local**. Contiene variables de entorno importantes. Además de la base de datos, revisa y ajusta si es necesario para tu configuración local:
 *   `APP_NAME`: Nombre de la aplicación.
-*   `APP_URL`: URL base de tu aplicación (importante para generar enlaces correctos).
+*   `APP_URL`: URL base de tu aplicación local (ej. `http://localhost:8000`).
 *   Configuraciones de correo (si implementas envío de emails).
 
-
-
+*(La configuración para el entorno de producción en Railway se gestiona directamente en las variables de entorno del servicio en la plataforma).*
