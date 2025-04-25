@@ -46,8 +46,16 @@ RUN composer install --no-interaction --no-progress --no-dev --optimize-autoload
 # Asegúrate que la ruta /app/public/build es correcta según tu build de npm
 COPY --from=frontend_builder /app/public/build ./public/build
 
+# --- INICIO PRUEBA DE SIMPLIFICACIÓN ---
+# ¡¡¡ IMPORTANTE: Elimina o comenta estas líneas después de probar !!!
+# Reemplaza index.php con algo súper simple
+RUN echo "<?php echo '<h1>Apache y PHP Funcionan</h1>'; phpinfo(); ?>" > /var/www/html/public/index.php
+# Asegúrate de que www-data pueda leerlo (por si acaso)
+RUN chown www-data:www-data /var/www/html/public/index.php && chmod 644 /var/www/html/public/index.php
+# --- FIN PRUEBA DE SIMPLIFICACIÓN ---
+
 # --- INICIO DEBUG TEMPORAL: Forzar visualización de errores PHP ---
-# ¡¡¡ IMPORTANTE: Elimina o comenta estas líneas después de depurar !!!
+# (Puedes mantener esto activo o comentarlo, no debería interferir con la prueba de simplificación)
 RUN find /usr/local/etc/php -name 'php.ini*' -exec sed -i -e 's/^display_errors = Off/display_errors = On/' {} \; && \
     find /usr/local/etc/php -name 'php.ini*' -exec sed -i -e 's/^error_reporting = .*/error_reporting = E_ALL/' {} \; && \
     find /usr/local/etc/php -name 'php.ini*' -exec sed -i -e 's/^log_errors = On/log_errors = On/' {} \;
@@ -59,10 +67,12 @@ RUN mkdir -p storage/framework/sessions storage/framework/views storage/framewor
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwx storage bootstrap/cache
 
+# --- Comentado para la PRUEBA DE SIMPLIFICACIÓN ---
 # Ejecuta optimizaciones de Laravel DESPUÉS de tener todo el código y assets
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+# RUN php artisan config:cache \
+#     && php artisan route:cache \
+#     && php artisan view:cache
+# --- Fin de comentarios ---
 
 # Expone el puerto 80 (heredado de spherework_base)
 EXPOSE 80
