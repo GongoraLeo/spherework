@@ -46,10 +46,11 @@ RUN composer install --no-interaction --no-progress --no-dev --optimize-autoload
 # Asegúrate que la ruta /app/public/build es correcta según tu build de npm
 COPY --from=frontend_builder /app/public/build ./public/build
 
-# --- ELIMINADA/COMENTADA LA PRUEBA DE SIMPLIFICACIÓN ---
-# RUN echo "<?php echo '<h1>Apache y PHP Funcionan</h1>'; phpinfo(); ?>" > /var/www/html/public/index.php
-# RUN chown www-data:www-data /var/www/html/public/index.php && chmod 644 /var/www/html/public/index.php
-# --- FIN PRUEBA DE SIMPLIFICACIÓN ---
+# --- Copiar y preparar el Entrypoint Script ---
+# Asume que entrypoint.sh está en la carpeta 'docker' junto a vhost.conf
+COPY ./docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+# --- Fin Entrypoint ---
 
 # --- INICIO DEBUG TEMPORAL: Forzar visualización y log de errores PHP ---
 # ¡¡¡ IMPORTANTE: Elimina o comenta estas líneas después de depurar !!!
@@ -75,8 +76,8 @@ RUN { \
     && cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini # Asegura que php.ini exista y tenga la config
 # --- FIN DEBUG TEMPORAL ---
 
-# Establece permisos correctos DESPUÉS de copiar todo
-# Crea directorios si no existen (importante si .dockerignore los excluye)
+# --- Comandos de creación/permisos originales (redundantes pero inofensivos) ---
+# Estos se ejecutan en la imagen, antes del montaje del volumen. El entrypoint los recreará/ajustará en el volumen.
 RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwx storage bootstrap/cache
@@ -90,5 +91,7 @@ RUN php artisan config:cache \
 # Expone el puerto 80 (heredado de spherework_base)
 EXPOSE 80
 
-# Comando por defecto para iniciar Apache (heredado de spherework_base)
+# --- Usar Entrypoint para preparar directorios y luego ejecutar CMD ---
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# El comando por defecto que se pasará al entrypoint
 CMD ["apache2-foreground"]
