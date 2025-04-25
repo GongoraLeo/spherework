@@ -22,7 +22,7 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends -qq \
     && docker-php-ext-enable opcache
 # Copia Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-# Copia la configuración de Apache (vhost)
+# Copia la configuración de Apache (vhost con logs a stderr/stdout)
 COPY ./docker/vhost.conf /etc/apache2/sites-available/000-default.conf
 # Habilita módulos de Apache necesarios
 RUN a2enmod rewrite expires headers
@@ -37,7 +37,7 @@ WORKDIR /var/www/html
 
 # Copia archivos de dependencias primero para aprovechar caché de Docker
 COPY composer.json composer.lock ./
-# Copia el resto del código de la aplicación
+# Copia el resto del código de la aplicación (¡Asegúrate que tu index.php original está aquí!)
 COPY . .
 # Instala dependencias de Composer (solo producción)
 RUN composer install --no-interaction --no-progress --no-dev --optimize-autoloader
@@ -46,19 +46,33 @@ RUN composer install --no-interaction --no-progress --no-dev --optimize-autoload
 # Asegúrate que la ruta /app/public/build es correcta según tu build de npm
 COPY --from=frontend_builder /app/public/build ./public/build
 
-# --- INICIO PRUEBA DE SIMPLIFICACIÓN ---
-# ¡¡¡ IMPORTANTE: Elimina o comenta estas líneas después de probar !!!
-# Reemplaza index.php con algo súper simple
-RUN echo "<?php echo '<h1>Apache y PHP Funcionan</h1>'; phpinfo(); ?>" > /var/www/html/public/index.php
-# Asegúrate de que www-data pueda leerlo (por si acaso)
-RUN chown www-data:www-data /var/www/html/public/index.php && chmod 644 /var/www/html/public/index.php
+# --- ELIMINADA/COMENTADA LA PRUEBA DE SIMPLIFICACIÓN ---
+# RUN echo "<?php echo '<h1>Apache y PHP Funcionan</h1>'; phpinfo(); ?>" > /var/www/html/public/index.php
+# RUN chown www-data:www-data /var/www/html/public/index.php && chmod 644 /var/www/html/public/index.php
 # --- FIN PRUEBA DE SIMPLIFICACIÓN ---
 
-# --- INICIO DEBUG TEMPORAL: Forzar visualización de errores PHP ---
-# (Puedes mantener esto activo o comentarlo, no debería interferir con la prueba de simplificación)
-RUN find /usr/local/etc/php -name 'php.ini*' -exec sed -i -e 's/^display_errors = Off/display_errors = On/' {} \; && \
-    find /usr/local/etc/php -name 'php.ini*' -exec sed -i -e 's/^error_reporting = .*/error_reporting = E_ALL/' {} \; && \
-    find /usr/local/etc/php -name 'php.ini*' -exec sed -i -e 's/^log_errors = On/log_errors = On/' {} \;
+# --- INICIO DEBUG TEMPORAL: Forzar visualización y log de errores PHP ---
+# ¡¡¡ IMPORTANTE: Elimina o comenta estas líneas después de depurar !!!
+# Intenta modificar php.ini de forma más robusta
+RUN { \
+        echo; \
+        echo '[PHP]'; \
+        echo 'display_errors = On'; \
+        echo 'display_startup_errors = On'; \
+        echo 'error_reporting = E_ALL'; \
+        echo 'log_errors = On'; \
+        echo 'error_log = /proc/self/fd/2'; \
+    } >> /usr/local/etc/php/php.ini-production \
+    && { \
+        echo; \
+        echo '[PHP]'; \
+        echo 'display_errors = On'; \
+        echo 'display_startup_errors = On'; \
+        echo 'error_reporting = E_ALL'; \
+        echo 'log_errors = On'; \
+        echo 'error_log = /proc/self/fd/2'; \
+    } >> /usr/local/etc/php/php.ini-development \
+    && cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini # Asegura que php.ini exista y tenga la config
 # --- FIN DEBUG TEMPORAL ---
 
 # Establece permisos correctos DESPUÉS de copiar todo
@@ -67,11 +81,10 @@ RUN mkdir -p storage/framework/sessions storage/framework/views storage/framewor
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwx storage bootstrap/cache
 
-# --- Comentado para la PRUEBA DE SIMPLIFICACIÓN ---
-# Ejecuta optimizaciones de Laravel DESPUÉS de tener todo el código y assets
-# RUN php artisan config:cache \
-#     && php artisan route:cache \
-#     && php artisan view:cache
+# --- Descomentado: Ejecuta optimizaciones de Laravel ---
+RUN php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
 # --- Fin de comentarios ---
 
 # Expone el puerto 80 (heredado de spherework_base)
