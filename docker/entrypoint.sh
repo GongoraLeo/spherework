@@ -7,7 +7,19 @@ sleep 1
 echo "Entrypoint: Clearing config cache (just in case)..."
 php artisan config:clear
 
-# --- INICIO: Imprimir Variables de Entorno ---
+# --- Ejecutar Migraciones ---
+echo "Entrypoint: Running database migrations..."
+php artisan migrate --force
+echo "Entrypoint: Migrations finished."
+# --- Fin Migraciones ---
+
+# --- Ejecutar Seeders ---
+echo "Entrypoint: Running database seeders..."
+php artisan db:seed --force
+echo "Entrypoint: Seeders finished."
+# --- Fin Seeders ---
+
+# --- INICIO: Imprimir Variables de Entorno (Opcional - puedes eliminar esto si ya no lo necesitas) ---
 echo "--- Environment Variables ---"
 echo "DB_CONNECTION=${DB_CONNECTION}"
 echo "DB_HOST=${DB_HOST}"
@@ -37,4 +49,5 @@ chmod -R ug+rwx /var/www/html/storage /var/www/html/bootstrap/cache
 echo "Entrypoint: Directories created and permissions set."
 echo "Entrypoint: Executing command: $@"
 
+# Ejecuta el comando pasado al script (que será apache2-foreground)
 exec "$@"
