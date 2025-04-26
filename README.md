@@ -53,102 +53,109 @@ Sigue estos pasos para poner en marcha el proyecto Spherework en tu entorno loca
 **2. Obtener el código fuente:**
 
 -   Navega hasta la carpeta `htdocs` dentro de tu directorio de instalación de XAMPP. Por ejemplo:
-    `bash
-cd C:\xampp\htdocs
-`
--   **Opción A (Usando el ZIP proporcionado):** Si has recibido el proyecto como un archivo `spherework.zip`, descomprímelo directamente dentro de la carpeta `htdocs`. Asegúrate de que la carpeta se llame `spherework`.
--   **Opción B (Clonando o descargando el ZIP con Git):** Clona el repositorio del proyecto desde GitHub:
-    `bash
-git clone https://github.com/GongoraLeo/spherework spherework
-`
-Descarga el archivo ZIP desde GitHub, descomprímelo dentro de `htdocs` y asegúrate de que la carpeta resultante se llame `spherework`. Entra en la carpeta del proyecto que acabas de obtener:
-    `bash
-cd spherework
-`
+    ```bash
+    cd C:\xampp\htdocs
+    ```
+-   **Opción A (Usando el ZIP proporcionado):** Si has recibido el proyecto como un archivo `spherework.zip`, descomprímelo directamente dentro de la carpeta `htdocs`. Asegúrate de que la carpeta resultante se llame `spherework`. **Importante:** Este ZIP ha sido optimizado en tamaño y **no incluye** las carpetas de dependencias (`vendor`, `node_modules`) ni el historial de Git (`.git`). Deberás instalarlas en los pasos siguientes.
+-   **Opción B (Clonando o descargando ZIP de GitHub):** Clona el repositorio del proyecto desde GitHub:
+    ```bash
+    git clone https://github.com/GongoraLeo/spherework spherework
+    ```
+    O descarga el archivo ZIP desde GitHub, descomprímelo dentro de `htdocs` y asegúrate de que la carpeta resultante se llame `spherework`.
+-   Una vez obtenido el código (por cualquier opción), entra en la carpeta del proyecto desde tu terminal:
+    ```bash
+    cd spherework
+    ```
 
-**3. Instalar dependencias (si es necesario):**
+**3. Instalar dependencias (Obligatorio para todas las opciones):**
 
-*   **Nota importante si usas el ZIP proporcionado (Opción A):** Si estás instalando desde el archivo `spherework.zip` que incluye las dependencias, los siguientes comandos (`composer install`, `npm install`) _pueden no ser estrictamente necesarios_ inicialmente, ya que las carpetas `vendor` y `node_modules` deberían estar presentes. Puedes intentar continuar con el paso 4. Si encuentras problemas más adelante, puedes intentar ejecutar estos comandos.
-*   Si has clonado o descargado el ZIP de GitHub (Opción B), o si tienes problemas con la Opción A, ejecuta:
-
-Instala las dependencias de PHP:
-    `bash
-            composer install --ignore-platform-reqs
-    `
-    _(El flag `--ignore-platform-reqs` puede ser útil si hay pequeñas diferencias de versión de PHP, pero idealmente tu PHP de XAMPP debería ser compatible)_.
-Instala las dependencias de JavaScript:
-    `bash
-            npm install
-    `
+-   Tanto si usas el ZIP proporcionado (Opción A) o clones/descargues de GitHub (Opción B), **es obligatorio** instalar las dependencias del proyecto. Ejecuta los siguientes comandos en la terminal dentro de la carpeta del proyecto (`C:\xampp\htdocs\spherework`):
+    -   Instala las dependencias de PHP (Laravel y otras librerías):
+        ```bash
+        composer install --ignore-platform-reqs
+        ```
+        *(El flag `--ignore-platform-reqs` puede ser útil si hay pequeñas diferencias de versión de PHP, pero idealmente tu PHP de XAMPP debería ser compatible)*.
+    -   Instala las dependencias de JavaScript (Tailwind, Vite, etc.):
+        ```bash
+        npm install
+        ```
 
 **4. Configuración del entorno:**
 
 -   Laravel utiliza un archivo `.env` para la configuración específica del entorno. Copia el archivo de ejemplo:
--   En Windows:
-    `bash
-            copy .env.example .env
-            `
--   En Linux/Mac:
-    `bash
-            cp .env.example .env
-            `
+    -   En Windows:
+        ```bash
+        copy .env.example .env
+        ```
+    -   En Linux/Mac:
+        ```bash
+        cp .env.example .env
+        ```
 -   Genera la clave única de la aplicación necesaria para Laravel:
-    `bash
-        php artisan key:generate
-        `
+    ```bash
+    php artisan key:generate
+    ```
 
 **5. Configuración de la base de datos:**
 
 -   Abre **phpMyAdmin** desde el panel de control de XAMPP o accediendo a `http://localhost/phpmyadmin` en tu navegador.
--   Crea una nueva base de datos. El nombre recomendado es `spherework`. Asegúrate de que el cotejamiento (collation) sea `utf8mb4_unicode_ci`. Ahora, edita el archivo `.env` que creaste en el paso anterior. Busca las siguientes líneas y configúralas para que coincidan con tu configuración de MySQL en XAMPP (los valores por defecto de XAMPP suelen ser los mostrados):
+-   Crea una nueva base de datos. El nombre recomendado es `spherework`. Asegúrate de que el cotejamiento (collation) sea `utf8mb4_unicode_ci`.
+-   Ahora, edita el archivo `.env` que creaste en el paso anterior. Busca las siguientes líneas y configúralas para que coincidan con tu configuración de MySQL en XAMPP (los valores por defecto de XAMPP suelen ser los mostrados):
+    ```dotenv
+    DB_CONNECTION=mysql
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DB_DATABASE=spherework  # Asegúrate que es el nombre de la BD que creaste
+    DB_USERNAME=root        # Usuario por defecto de MySQL en XAMPP
+    DB_PASSWORD=            # Contraseña por defecto en XAMPP (vacía)
 
-```dotenv
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=spherework # Asegúrate que es el nombre de la BD que creaste
-DB_USERNAME=root # Usuario por defecto de MySQL en XAMPP
-DB_PASSWORD= # Contraseña por defecto en XAMPP (vacía)
-
-        # Asegúrate también de que estas variables estén así para desarrollo local:
-        APP_ENV=local
-        APP_DEBUG=true
-        APP_URL=http://localhost:8000 # O http://127.0.0.1:8000
-```
-
+    # Asegúrate también de que estas variables estén así para desarrollo local:
+    APP_ENV=local
+    APP_DEBUG=true
+    APP_URL=http://localhost:8000 # O http://127.0.0.1:8000
+    ```
 -   Guarda los cambios en el archivo `.env`.
 
 **6. Migraciones y seeders:**
-- Vuelve a tu terminal, asegurándote de estar en la carpeta del proyecto (`C:\xampp\htdocs\spherework`).
-- Ejecuta las migraciones para crear todas las tablas en la base de datos `spherework`:
-`bash
-        php artisan migrate
-        `
 
-- Ejecuta los \*seeders\*. Estos poblarán la base de datos con datos iniciales, incluyendo categorías, autores, libros de ejemplo y los usuarios de prueba (admin y cliente):
-    `bash
-        php artisan db:seed
-        `
+-   Vuelve a tu terminal, asegurándote de estar en la carpeta del proyecto (`C:\xampp\htdocs\spherework`).
+-   Ejecuta las migraciones para crear todas las tablas en la base de datos `spherework`:
+    ```bash
+    php artisan migrate
+    ```
+-   Ejecuta los *seeders*. Estos poblarán la base de datos con datos iniciales, incluyendo categorías, autores, libros de ejemplo y los usuarios de prueba (admin y cliente):
+    ```bash
+    php artisan db:seed
+    ```
 
-**7. Compilar assets frontend:**
-- Para compilar los archivos CSS (Tailwind) y JavaScript necesarios para la interfaz:
-`bash
+**7. Compilar assets frontend (Obligatorio para todas las opciones):**
+
+-   Dado que el archivo ZIP proporcionado no incluye los assets compilados (carpeta `public/build`) y al clonar tampoco existen, **es necesario** compilar los archivos CSS (Tailwind) y JavaScript para la interfaz. Ejecuta uno de los siguientes comandos en la terminal:
+    -   **Para desarrollo (recomendado durante la instalación y prueba):**
+        ```bash
         npm run dev
-`
-- Este comando iniciará un proceso de Vite que vigilará los cambios en los archivos fuente (CSS, JS, Blade) y los recompilará automáticamente. **Debes dejar esta terminal abierta mientras trabajas con la aplicación.** Si solo necesitas una compilación única para producción (no para desarrollo local activo), puedes usar `npm run build`. _(Nota: Si usaste el ZIP proporcionado con dependencias, los assets podrían estar ya compilados. Si la interfaz no se ve correctamente, ejecuta `npm run build` una vez o `npm run dev`)_.
+        ```
+        Este comando iniciará un proceso de Vite que vigilará los cambios en los archivos fuente (CSS, JS, Blade) y los recompilará automáticamente. **Debes dejar esta terminal abierta mientras trabajas con la aplicación.**
+    -   **Para compilación única (alternativa):** Si prefieres no dejar una terminal abierta, puedes ejecutar una compilación única:
+        ```bash
+        npm run build
+        ```
+        Esto generará los archivos necesarios en `public/build`.
 
 **8. Servir la aplicación:**
-- Abre **una nueva terminal** (deja la de `npm run dev` ejecutándose si la iniciaste).
-- Navega de nuevo a la carpeta del proyecto (`cd C:\xampp\htdocs\spherework`).
-- Inicia el servidor de desarrollo incorporado de Laravel:
-`bash
-        php artisan serve
-`
-- Este comando te indicará la dirección en la que la aplicación está corriendo, normalmente `http://127.0.0.1:8000`.
+
+-   Abre **una nueva terminal** (deja la de `npm run dev` ejecutándose si la iniciaste).
+-   Navega de nuevo a la carpeta del proyecto (`cd C:\xampp\htdocs\spherework`).
+-   Inicia el servidor de desarrollo incorporado de Laravel:
+    ```bash
+    php artisan serve
+    ```
+-   Este comando te indicará la dirección en la que la aplicación está corriendo, normalmente `http://127.0.0.1:8000`.
 
 **9. Acceder a la aplicación:**
-- Abre tu navegador web y ve a la dirección indicada por el comando `php artisan serve` (ej. `http://127.0.0.1:8000`).
-- ¡Deberías ver la página de inicio de Spherework! Puedes registrar un nuevo usuario o usar los usuarios de prueba creados por los seeders (ver sección "Usuarios de prueba").
+
+-   Abre tu navegador web y ve a la dirección indicada por el comando `php artisan serve` (ej. `http://127.0.0.1:8000`).
+-   ¡Deberías ver la página de inicio de Spherework! Puedes registrar un nuevo usuario o usar los usuarios de prueba creados por los seeders (ver sección "Usuarios de prueba").
 
 ## 🌐 Acceso a la aplicación desplegada (producción)
 
@@ -176,9 +183,9 @@ Puedes usar estas credenciales para iniciar sesión y probar las funcionalidades
 ## 🧪 Testing y documentación
 
 -   **Pruebas:** Se han realizado pruebas utilizando **PHPUnit** para asegurar la calidad y el correcto funcionamiento del código backend. Todas las pruebas han sido superadas satisfactoriamente.
-    -   Puedes consultar el reporte de cobertura de las pruebas en la carpeta `coverage-report/index.html`.
+    -   Puedes consultar el reporte de cobertura de las pruebas en la carpeta `coverage-report/index.html` (si está incluida en tu versión).
 -   **Documentación del código:** Se ha generado documentación automática del código fuente utilizando **phpDocumentor**. Esta documentación detalla las clases, métodos y propiedades del proyecto.
-    -   Puedes explorar la documentación de la API en la carpeta `docs/api/index.html`.
+    -   Puedes explorar la documentación de la API en la carpeta `docs/api/index.html` (si está incluida en tu versión).
 
 ## ⚙️ Configuración adicional (.env - solo local)
 
