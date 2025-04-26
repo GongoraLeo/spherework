@@ -49,7 +49,7 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
 **2. Clonar el Repositorio:**
     *   Abre tu terminal o Git Bash.
     *   Navega a la carpeta `htdocs` de tu instalación de XAMPP (ej. `cd C:\xampp\htdocs`).
-    *   Clona el proyecto 
+    *   Clona el proyecto
         ```bash
         git clone https://github.com/GongoraLeo/spherework spherework
         ```
@@ -142,6 +142,13 @@ La base de datos se inicializa con los siguientes usuarios de prueba gracias a l
     *   **Password:** `clientepassword`
 
 Puedes usar estas credenciales para iniciar sesión y probar las funcionalidades de cada rol tanto en el entorno local como en la versión desplegada en Railway.
+
+## 🧪 Testing y Documentación
+
+*   **Pruebas Unitarias:** Se han realizado pruebas unitarias utilizando **PHPUnit** para asegurar la calidad y el correcto funcionamiento del código backend. Todas las pruebas han sido superadas satisfactoriamente.
+    *   Puedes consultar el reporte de cobertura de las pruebas aquí: Ver Reporte de Cobertura
+*   **Documentación del Código:** Se ha generado documentación automática del código fuente utilizando **phpDocumentor**. Esta documentación detalla las clases, métodos y propiedades del proyecto.
+    *   Puedes explorar la documentación de la API aquí: Ver Documentación de la API
 
 ## ⚙️ Configuración Adicional (.env - Solo Local)
 
