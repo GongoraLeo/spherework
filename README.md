@@ -146,9 +146,9 @@ Puedes usar estas credenciales para iniciar sesión y probar las funcionalidades
 ## 🧪 Testing y Documentación
 
 *   **Pruebas Unitarias:** Se han realizado pruebas unitarias utilizando **PHPUnit** para asegurar la calidad y el correcto funcionamiento del código backend. Todas las pruebas han sido superadas satisfactoriamente.
-    *   Puedes consultar el reporte de cobertura de las pruebas aquí: Ver Reporte de Cobertura
+    *   Puedes consultar el reporte de cobertura de las pruebas aquí: Ver reporte de cobertura: https://github.com/GongoraLeo/spherework/tree/main/coverage-report/index.html
 *   **Documentación del Código:** Se ha generado documentación automática del código fuente utilizando **phpDocumentor**. Esta documentación detalla las clases, métodos y propiedades del proyecto.
-    *   Puedes explorar la documentación de la API aquí: Ver Documentación de la API
+    *   Puedes explorar la documentación de la API aquí: Ver documentación de la API: https://github.com/GongoraLeo/spherework/tree/main/docs/api/index.html
 
 ## ⚙️ Configuración Adicional (.env - Solo Local)
 
