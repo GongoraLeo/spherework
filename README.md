@@ -54,50 +54,55 @@ Sigue estos pasos para poner en marcha el proyecto Spherework en tu entorno loca
 
 -   Navega hasta la carpeta `htdocs` dentro de tu directorio de instalación de XAMPP. Por ejemplo:
     `bash
-    cd C:\xampp\htdocs
-    `
+cd C:\xampp\htdocs
+`
 -   **Opción A (Usando el ZIP proporcionado):** Si has recibido el proyecto como un archivo `spherework.zip`, descomprímelo directamente dentro de la carpeta `htdocs`. Asegúrate de que la carpeta se llame `spherework`.
 -   **Opción B (Clonando o descargando el ZIP con Git):** Clona el repositorio del proyecto desde GitHub:
     `bash
-    git clone https://github.com/GongoraLeo/spherework spherework
-    `
+git clone https://github.com/GongoraLeo/spherework spherework
+`
 -   Descarga el archivo ZIP desde GitHub, descomprímelo dentro de `htdocs` y asegúrate de que la carpeta resultante se llame `spherework`.
 -   Entra en la carpeta del proyecto que acabas de obtener:
     `bash
-    cd spherework
-    `
+cd spherework
+`
 
 **3. Instalar dependencias (si es necesario):**
-* **Nota importante si usas el ZIP proporcionado (Opción A):** Si estás instalando desde el archivo `spherework.zip` que incluye las dependencias, los siguientes comandos (`composer install`, `npm install`) *pueden no ser estrictamente necesarios* inicialmente, ya que las carpetas `vendor` y `node_modules` deberían estar presentes. Puedes intentar continuar con el paso 4. Si encuentras problemas más adelante, puedes intentar ejecutar estos comandos.
-* Si has clonado o descargado el ZIP de GitHub (Opción B), o si tienes problemas con la Opción A, ejecuta:
-- Instala las dependencias de PHP:
-`bash
+
+-   **Nota importante si usas el ZIP proporcionado (Opción A):** Si estás instalando desde el archivo `spherework.zip` que incluye las dependencias, los siguientes comandos (`composer install`, `npm install`) _pueden no ser estrictamente necesarios_ inicialmente, ya que las carpetas `vendor` y `node_modules` deberían estar presentes. Puedes intentar continuar con el paso 4. Si encuentras problemas más adelante, puedes intentar ejecutar estos comandos.
+-   Si has clonado o descargado el ZIP de GitHub (Opción B), o si tienes problemas con la Opción A, ejecuta:
+
+*   Instala las dependencias de PHP:
+    `bash
             composer install --ignore-platform-reqs
             `
-_(El flag `--ignore-platform-reqs` puede ser útil si hay pequeñas diferencias de versión de PHP, pero idealmente tu PHP de XAMPP debería ser compatible)_.
-- Instala las dependencias de JavaScript:
-`bash
+    _(El flag `--ignore-platform-reqs` puede ser útil si hay pequeñas diferencias de versión de PHP, pero idealmente tu PHP de XAMPP debería ser compatible)_.
+*   Instala las dependencias de JavaScript:
+    `bash
             npm install
             `
 
 **4. Configuración del entorno:**
-- Laravel utiliza un archivo `.env` para la configuración específica del entorno. Copia el archivo de ejemplo:
-- En Windows:
-`bash
+
+-   Laravel utiliza un archivo `.env` para la configuración específica del entorno. Copia el archivo de ejemplo:
+-   En Windows:
+    `bash
             copy .env.example .env
             `
-- En Linux/Mac:
-`bash
+-   En Linux/Mac:
+    `bash
             cp .env.example .env
             `
-- Genera la clave única de la aplicación necesaria para Laravel:
-`bash
+-   Genera la clave única de la aplicación necesaria para Laravel:
+    `bash
         php artisan key:generate
         `
 
 **5. Configuración de la base de datos:**
-- Abre **phpMyAdmin** desde el panel de control de XAMPP o accediendo a `http://localhost/phpmyadmin` en tu navegador.
-- Crea una nueva base de datos. El nombre recomendado es `spherework`. Asegúrate de que el cotejamiento (collation) sea `utf8mb4_unicode_ci`. Ahora, edita el archivo `.env` que creaste en el paso anterior. Busca las siguientes líneas y configúralas para que coincidan con tu configuración de MySQL en XAMPP (los valores por defecto de XAMPP suelen ser los mostrados):
+
+-   Abre **phpMyAdmin** desde el panel de control de XAMPP o accediendo a `http://localhost/phpmyadmin` en tu navegador.
+-   Crea una nueva base de datos. El nombre recomendado es `spherework`. Asegúrate de que el cotejamiento (collation) sea `utf8mb4_unicode_ci`. Ahora, edita el archivo `.env` que creaste en el paso anterior. Busca las siguientes líneas y configúralas para que coincidan con tu configuración de MySQL en XAMPP (los valores por defecto de XAMPP suelen ser los mostrados):
+
 ```dotenv
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -110,39 +115,41 @@ DB_PASSWORD= # Contraseña por defecto en XAMPP (vacía)
         APP_ENV=local
         APP_DEBUG=true
         APP_URL=http://localhost:8000 # O http://127.0.0.1:8000
-        ```
-- Guarda los cambios en el archivo `.env`.
+```
+
+-   Guarda los cambios en el archivo `.env`.
 
 **6. Migraciones y seeders:**
-_ Vuelve a tu terminal, asegurándote de estar en la carpeta del proyecto (`C:\xampp\htdocs\spherework`).
-_ Ejecuta las migraciones para crear todas las tablas en la base de datos `spherework`:
+- Vuelve a tu terminal, asegurándote de estar en la carpeta del proyecto (`C:\xampp\htdocs\spherework`).
+- Ejecuta las migraciones para crear todas las tablas en la base de datos `spherework`:
 `bash
         php artisan migrate
         `
-* Ejecuta los *seeders\*. Estos poblarán la base de datos con datos iniciales, incluyendo categorías, autores, libros de ejemplo y los usuarios de prueba (admin y cliente):
-`bash
+
+- Ejecuta los \*seeders\*. Estos poblarán la base de datos con datos iniciales, incluyendo categorías, autores, libros de ejemplo y los usuarios de prueba (admin y cliente):
+    `bash
         php artisan db:seed
         `
 
 **7. Compilar assets frontend:**
-_ Para compilar los archivos CSS (Tailwind) y JavaScript necesarios para la interfaz:
+- Para compilar los archivos CSS (Tailwind) y JavaScript necesarios para la interfaz:
 `bash
         npm run dev
-        `
-_ Este comando iniciará un proceso de Vite que vigilará los cambios en los archivos fuente (CSS, JS, Blade) y los recompilará automáticamente. **Debes dejar esta terminal abierta mientras trabajas con la aplicación.** Si solo necesitas una compilación única para producción (no para desarrollo local activo), puedes usar `npm run build`. _(Nota: Si usaste el ZIP proporcionado con dependencias, los assets podrían estar ya compilados. Si la interfaz no se ve correctamente, ejecuta `npm run build` una vez o `npm run dev`)_.
+`
+- Este comando iniciará un proceso de Vite que vigilará los cambios en los archivos fuente (CSS, JS, Blade) y los recompilará automáticamente. **Debes dejar esta terminal abierta mientras trabajas con la aplicación.** Si solo necesitas una compilación única para producción (no para desarrollo local activo), puedes usar `npm run build`. _(Nota: Si usaste el ZIP proporcionado con dependencias, los assets podrían estar ya compilados. Si la interfaz no se ve correctamente, ejecuta `npm run build` una vez o `npm run dev`)_.
 
 **8. Servir la aplicación:**
-_ Abre **una nueva terminal** (deja la de `npm run dev` ejecutándose si la iniciaste).
-_ Navega de nuevo a la carpeta del proyecto (`cd C:\xampp\htdocs\spherework`).
-_ Inicia el servidor de desarrollo incorporado de Laravel:
+- Abre **una nueva terminal** (deja la de `npm run dev` ejecutándose si la iniciaste).
+- Navega de nuevo a la carpeta del proyecto (`cd C:\xampp\htdocs\spherework`).
+- Inicia el servidor de desarrollo incorporado de Laravel:
 `bash
         php artisan serve
-        `
-_ Este comando te indicará la dirección en la que la aplicación está corriendo, normalmente `http://127.0.0.1:8000`.
+`
+- Este comando te indicará la dirección en la que la aplicación está corriendo, normalmente `http://127.0.0.1:8000`.
 
 **9. Acceder a la aplicación:**
-_ Abre tu navegador web y ve a la dirección indicada por el comando `php artisan serve` (ej. `http://127.0.0.1:8000`).
-_ ¡Deberías ver la página de inicio de Spherework! Puedes registrar un nuevo usuario o usar los usuarios de prueba creados por los seeders (ver sección "Usuarios de prueba").
+- Abre tu navegador web y ve a la dirección indicada por el comando `php artisan serve` (ej. `http://127.0.0.1:8000`).
+- ¡Deberías ver la página de inicio de Spherework! Puedes registrar un nuevo usuario o usar los usuarios de prueba creados por los seeders (ver sección "Usuarios de prueba").
 
 ## 🌐 Acceso a la aplicación desplegada (producción)
 
