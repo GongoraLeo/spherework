@@ -61,26 +61,25 @@ cd C:\xampp\htdocs
     `bash
 git clone https://github.com/GongoraLeo/spherework spherework
 `
--   Descarga el archivo ZIP desde GitHub, descomprímelo dentro de `htdocs` y asegúrate de que la carpeta resultante se llame `spherework`.
--   Entra en la carpeta del proyecto que acabas de obtener:
+Descarga el archivo ZIP desde GitHub, descomprímelo dentro de `htdocs` y asegúrate de que la carpeta resultante se llame `spherework`. Entra en la carpeta del proyecto que acabas de obtener:
     `bash
 cd spherework
 `
 
 **3. Instalar dependencias (si es necesario):**
 
--   **Nota importante si usas el ZIP proporcionado (Opción A):** Si estás instalando desde el archivo `spherework.zip` que incluye las dependencias, los siguientes comandos (`composer install`, `npm install`) _pueden no ser estrictamente necesarios_ inicialmente, ya que las carpetas `vendor` y `node_modules` deberían estar presentes. Puedes intentar continuar con el paso 4. Si encuentras problemas más adelante, puedes intentar ejecutar estos comandos.
--   Si has clonado o descargado el ZIP de GitHub (Opción B), o si tienes problemas con la Opción A, ejecuta:
+*   **Nota importante si usas el ZIP proporcionado (Opción A):** Si estás instalando desde el archivo `spherework.zip` que incluye las dependencias, los siguientes comandos (`composer install`, `npm install`) _pueden no ser estrictamente necesarios_ inicialmente, ya que las carpetas `vendor` y `node_modules` deberían estar presentes. Puedes intentar continuar con el paso 4. Si encuentras problemas más adelante, puedes intentar ejecutar estos comandos.
+*   Si has clonado o descargado el ZIP de GitHub (Opción B), o si tienes problemas con la Opción A, ejecuta:
 
-*   Instala las dependencias de PHP:
+Instala las dependencias de PHP:
     `bash
             composer install --ignore-platform-reqs
-            `
+    `
     _(El flag `--ignore-platform-reqs` puede ser útil si hay pequeñas diferencias de versión de PHP, pero idealmente tu PHP de XAMPP debería ser compatible)_.
-*   Instala las dependencias de JavaScript:
+Instala las dependencias de JavaScript:
     `bash
             npm install
-            `
+    `
 
 **4. Configuración del entorno:**
 
