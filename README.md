@@ -56,7 +56,7 @@ Sigue estos pasos para poner en marcha el proyecto Spherework en tu entorno loca
     ```bash
     cd C:\xampp\htdocs
     ```
--   **Opción A (Usando el ZIP proporcionado):** Si has recibido el proyecto como un archivo `spherework.zip`, descomprímelo directamente dentro de la carpeta `htdocs`. Asegúrate de que la carpeta resultante se llame `spherework`. **Importante:** Este ZIP ha sido optimizado en tamaño y **no incluye** las carpetas de dependencias (`vendor`, `node_modules`) ni el historial de Git (`.git`). Deberás instalarlas en los pasos siguientes.
+-   **Opción A (Usando el ZIP proporcionado):** Si has recibido el proyecto como un archivo `spherework.zip`, descomprímelo directamente dentro de la carpeta `htdocs`. Asegúrate de que la carpeta resultante se llame `spherework`. **Importante:** El ZIP subido en el ejecicio ha sido rebajado de tamaño y **no incluye** las carpetas de dependencias (`vendor`, `node_modules`) ni el historial de Git (`.git`). Deberás instalarlas en los pasos siguientes.
 -   **Opción B (Clonando o descargando ZIP de GitHub):** Clona el repositorio del proyecto desde GitHub:
     ```bash
     git clone https://github.com/GongoraLeo/spherework spherework
@@ -99,7 +99,7 @@ Sigue estos pasos para poner en marcha el proyecto Spherework en tu entorno loca
 **5. Configuración de la base de datos:**
 
 -   Abre **phpMyAdmin** desde el panel de control de XAMPP o accediendo a `http://localhost/phpmyadmin` en tu navegador.
--   Crea una nueva base de datos. El nombre recomendado es `spherework`. Asegúrate de que el cotejamiento (collation) sea `utf8mb4_unicode_ci`.
+-   Crea una nueva base de datos. El nombre recomendado es `spherework`. Asegúrate de que el cotejamiento sea utf8mb4_general_ci (se adjunta archivo `create_database.sql` para la creación de la base de datos).
 -   Ahora, edita el archivo `.env` que creaste en el paso anterior. Busca las siguientes líneas y configúralas para que coincidan con tu configuración de MySQL en XAMPP (los valores por defecto de XAMPP suelen ser los mostrados):
     ```dotenv
     DB_CONNECTION=mysql
